@@ -289,13 +289,15 @@ function styleHeader_(sh, headers) {
 
 /* ================= 텔레그램 ================= */
 
-function tg_(lines) {
+/** 전송 결과를 문자열로 돌려줌 ('OK' 또는 실패 이유) */
+function tg_(lines, retried) {
   const p = PropertiesService.getScriptProperties();
-  const token = p.getProperty('TELEGRAM_TOKEN');
-  const chat = p.getProperty('TELEGRAM_CHAT_ID');
-  if (!token || !chat) return;
+  const token = (p.getProperty('TELEGRAM_TOKEN') || '').trim();
+  const chat = (p.getProperty('TELEGRAM_CHAT_ID') || '').trim();
+  if (!token) return log_('텔레그램: 스크립트 속성에 TELEGRAM_TOKEN이 없어요.');
+  if (!chat) return log_('텔레그램: TELEGRAM_CHAT_ID가 없어요. findTelegramChatId를 먼저 실행하세요.');
   try {
-    UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true,
       payload: JSON.stringify({
         chat_id: chat,
@@ -303,8 +305,21 @@ function tg_(lines) {
         disable_web_page_preview: true
       })
     });
-  } catch (e) { console.log('텔레그램 전송 실패: ' + e); }
+    const body = JSON.parse(res.getContentText() || '{}');
+    if (body.ok) return 'OK';
+    // 그룹이 슈퍼그룹으로 바뀌면 방 ID가 바뀜 → 새 ID로 저장 후 한 번 더 시도
+    const moved = body.parameters && body.parameters.migrate_to_chat_id;
+    if (moved && !retried) {
+      p.setProperty('TELEGRAM_CHAT_ID', String(moved));
+      return tg_(lines, true);
+    }
+    return log_(`텔레그램 오류 ${res.getResponseCode()}: ${body.description || res.getContentText()}`);
+  } catch (e) {
+    return log_('텔레그램 전송 실패: ' + e);
+  }
 }
+
+function log_(m) { console.log(m); return m; }
 
 /** ① 봇을 단톡방에 넣고 단톡방에 /start 를 한 번 보낸 뒤 실행 → 채팅방 ID를 찾아 자동 저장 */
 function findTelegramChatId() {
@@ -327,7 +342,12 @@ function findTelegramChatId() {
 
 /** ② 테스트 메시지 보내기 */
 function testTelegram() {
-  tg_(['✅ 차량 케어 알림 연결 완료', '앞으로 새 신청과 추천서 소식이 이 방으로 옵니다.']);
+  const p = PropertiesService.getScriptProperties();
+  console.log('TELEGRAM_TOKEN: ' + (p.getProperty('TELEGRAM_TOKEN') ? '있음' : '없음'));
+  console.log('TELEGRAM_CHAT_ID: ' + (p.getProperty('TELEGRAM_CHAT_ID') || '없음'));
+  const r = tg_(['✅ 차량 케어 알림 연결 완료', '앞으로 새 신청과 추천서 소식이 이 방으로 옵니다.']);
+  if (r !== 'OK') throw new Error(r);
+  console.log('전송 성공! 단톡방을 확인하세요.');
 }
 
 /* ================= 유틸 ================= */
