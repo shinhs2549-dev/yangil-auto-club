@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>자동차 구동 방식의 종류와 특징</title>
+<style>
+
+/* ── NeoHyundai @font-face ── */
+@font-face { font-family:"NeoHyundai L";   src:url("NeoHyundai_L.ttf")   format("truetype"); font-display:block; }
+@font-face { font-family:"NeoHyundai R";   src:url("NeoHyundai_R.ttf")   format("truetype"); font-display:block; }
+@font-face { font-family:"NeoHyundai B";   src:url("NeoHyundai_B.ttf")   format("truetype"); font-display:block; }
+@font-face { font-family:"NeoHyundai EB";  src:url("NeoHyundai_EB.ttf")  format("truetype"); font-display:block; }
+@font-face { font-family:"NeoHyundai EBK"; src:url("NeoHyundai_EBK.ttf") format("truetype"); font-display:block; }
+
+:root {
+  --font-L:  "NeoHyundai L",   sans-serif;
+  --font-R:  "NeoHyundai R",   sans-serif;
+  --font-B:  "NeoHyundai B",   sans-serif;
+  --font-EB: "NeoHyundai EB",  sans-serif;
+  --font-EBK:"NeoHyundai EBK", sans-serif;
+
+  --ink:     #ffffff;
+  --ink-dim: #9aabb8;
+  --ink-sub: #5e6f7d;
+  --canvas:  #0e1318;
+  --panel:   #141b22;
+  --card:    #1a2330;
+  --border:  rgba(255,255,255,0.07);
+  --blue:    #1c69d4;
+  --green:   #22c55e;
+  --gold:    #f59e0b;
+  --red:     #ef4444;
+  --purple:  #a855f7;
+  --orange:  #f97316;
+
+  --px: 72px;   /* slide horizontal padding */
+  --ch: 44px;   /* chapter label top */
+  --tt: 86px;   /* title top */
+  --st: 148px;  /* subtitle top */
+  --bt: 202px;  /* body top */
+  --fh: 46px;   /* footer height */
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  background:#060a0e;
+  display:flex; align-items:center; justify-content:center;
+  width:100vw; height:100vh; overflow:hidden;
+}
+
+/* ── Scaler ── */
+#wrap {
+  width:100vw; height:100vh;
+  display:flex; align-items:center; justify-content:center;
+}
+#scaler {
+  width:1280px; height:720px;
+  transform-origin:center center;
+  position:relative;
+}
+
+/* ── Slide base ── */
+.s {
+  width:1280px; height:720px;
+  position:absolute; inset:0;
+  overflow:hidden;
+  background:var(--canvas);
+  font-family:var(--font-R);
+  color:var(--ink);
+  display:none;
+}
+.s.on { display:block; }
+
+/* Subtle dot-grid texture for all dark slides */
+.s::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image:radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size:32px 32px;
+  pointer-events:none;
+  z-index:0;
+}
+.s.light { background:#f5f6f8; color:#111; }
+.s.light::before { background-image:radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px); }
+
+/* All content above texture */
+.s > * { position:relative; z-index:1; }
+
+/* ── Fixed anchors ── */
+.ch {
+  position:absolute; top:var(--ch); left:var(--px);
+  font-family:var(--font-B);
+  font-size:11px; letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--blue);
+}
+.tt {
+  position:absolute; top:var(--tt); left:var(--px); right:var(--px);
+  font-family:var(--font-EBK);
+  font-size:40px; line-height:1.08;
+  color:var(--ink);
+}
+.tt.en { font-family:var(--font-EB); }
+.st {
+  position:absolute; top:var(--st); left:var(--px); right:var(--px);
+  font-family:var(--font-L);
+  font-size:15px; line-height:1.5;
+  color:var(--ink-dim);
+}
+.body {
+  position:absolute;
+  top:var(--bt); left:var(--px); right:var(--px);
+  bottom:calc(var(--fh) + 16px);
+}
+.light .tt { color:#111; }
+.light .st { color:#555; }
+
+/* ── Footer ── */
+.ft {
+  position:absolute; bottom:0; left:0; right:0;
+  height:var(--fh);
+  background:#0a0d11;
+  display:flex; align-items:center;
+  justify-content:space-between;
+  padding:0 var(--px);
+  border-top:1px solid var(--border);
+  z-index:10;
+}
+.light .ft { background:#e8eaed; border-color:rgba(0,0,0,0.08); }
+.ft-label {
+  font-family:var(--font-B);
+  font-size:11px; letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--ink-sub);
+}
+.ft-page {
+  font-family:var(--font-R);
+  font-size:11px; color:var(--ink-sub);
+}
+.light .ft-label, .light .ft-page { color:#888; }
+
+/* ── Progress bar ── */
+#pbar {
+  position:fixed; top:0; left:0;
+  height:2px; background:var(--blue);
+  transition:width .25s ease;
+  z-index:999;
+}
+
+/* ── Nav ── */
+.nav {
+  position:fixed; top:50%; transform:translateY(-50%);
+  width:36px; height:36px;
+  background:rgba(28,105,212,0.7);
+  border:none; color:#fff;
+  font-size:16px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  z-index:998;
+  transition:background .15s;
+}
+.nav:hover { background:var(--blue); }
+#pv { left:12px; }
+#nx { right:12px; }
+
+/* ══════════════════════════════════════════
+   SLIDE-SPECIFIC LAYOUTS
+   ══════════════════════════════════════════ */
+
+/* ── Drivetrain split layout ── */
+/* Left panel = full-height diagram zone */
+.dt-wrap {
+  position:absolute;
+  top:0; left:0; bottom:0; right:0;
+  display:grid;
+}
+.dt-wrap.left-diagram  { grid-template-columns: 520px 1fr; }
+.dt-wrap.right-diagram { grid-template-columns: 1fr 520px; }
+
+.dt-diagram-zone {
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.dt-diagram-zone.has-bg::after {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(to right, transparent 60%, var(--canvas) 100%);
+  pointer-events:none;
+}
+.dt-wrap.right-diagram .dt-diagram-zone.has-bg::after {
+  background:linear-gradient(to left, transparent 60%, var(--canvas) 100%);
+}
+
+.dt-info {
+  display:flex; flex-direction:column;
+  justify-content:center;
+  padding:var(--fh) 48px var(--fh) 40px;
+  gap:0;
+}
+.dt-wrap.left-diagram .dt-info {
+  padding:var(--fh) var(--px) var(--fh) 36px;
+}
+
+/* Drivetrain type badge */
+.dt-type {
+  font-family:var(--font-EB);
+  font-size:64px; line-height:1;
+  margin-bottom:4px;
+  letter-spacing:-1px;
+}
+.dt-full-name {
+  font-family:var(--font-L);
+  font-size:13px; letter-spacing:1px;
+  color:var(--ink-dim);
+  margin-bottom:20px;
+}
+.dt-divider {
+  width:32px; height:2px;
+  margin-bottom:20px;
+}
+
+/* Pro/Con list */
+.pc-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px; }
+.pc-head {
+  font-family:var(--font-B);
+  font-size:10px; letter-spacing:2px;
+  text-transform:uppercase;
+  padding-bottom:8px;
+  margin-bottom:10px;
+}
+.pc-head.pro { color:var(--green); border-bottom:1px solid rgba(34,197,94,0.3); }
+.pc-head.con { color:var(--red);   border-bottom:1px solid rgba(239,68,68,0.3); }
+.pc-item {
+  font-family:var(--font-L);
+  font-size:13px; line-height:1.65;
+  color:var(--ink-dim);
+  padding-left:14px;
+  position:relative;
+  margin-bottom:2px;
+}
+.pc-item::before {
+  content:'+';
+  position:absolute; left:0;
+  font-family:var(--font-B);
+}
+.con .pc-item::before { content:'−'; }
+.pro .pc-item::before { color:var(--green); }
+.con .pc-item::before { color:var(--red); }
+
+/* Stat strip */
+.stat-strip {
+  display:flex; gap:28px;
+  padding-top:18px;
+  border-top:1px solid var(--border);
+}
+.stat-item { }
+.stat-num {
+  font-family:var(--font-EB);
+  font-size:26px; line-height:1;
+}
+.stat-lbl {
+  font-family:var(--font-R);
+  font-size:10px; letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--ink-sub);
+  margin-top:4px;
+}
+
+/* Rep cars chip row */
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px; }
+.chip {
+  font-family:var(--font-R);
+  font-size:11px;
+  padding:4px 10px;
+  border:1px solid var(--border);
+  color:var(--ink-dim);
+}
+
+/* ── Accent line left of whole info panel ── */
+.dt-accent-line {
+  position:absolute;
+  top:10%; bottom:10%;
+  width:3px;
+  left:0;
+}
+
+/* ══ SLIDE 01 HERO ════════════════════════ */
+.hero-eyebrow {
+  position:absolute; top:var(--ch); left:var(--px);
+  font-family:var(--font-B);
+  font-size:11px; letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--blue);
+}
+.hero-title {
+  position:absolute;
+  top:92px; left:var(--px);
+  font-family:var(--font-EBK);
+  font-size:68px; line-height:1.0;
+  width:580px;
+}
+.hero-sub {
+  position:absolute;
+  top:330px; left:var(--px);
+  width:500px;
+  font-family:var(--font-L);
+  font-size:16px; line-height:1.65;
+  color:var(--ink-dim);
+}
+.hero-qs {
+  position:absolute;
+  bottom:calc(var(--fh) + 24px); left:var(--px);
+  display:flex; gap:12px;
+}
+.hero-q {
+  background:var(--card);
+  border:1px solid var(--border);
+  padding:16px 20px;
+  width:260px;
+}
+.hero-q-num {
+  font-family:var(--font-EB);
+  font-size:28px; line-height:1;
+  color:var(--blue);
+  margin-bottom:8px;
+}
+.hero-q-txt {
+  font-family:var(--font-L);
+  font-size:13px; line-height:1.6;
+  color:var(--ink-dim);
+}
+
+/* ══ SLIDE 02 STRUCTURE ══════════════════ */
+.flow-strip {
+  display:flex; align-items:stretch;
+  height:80px;
+  margin-bottom:28px;
+}
+.flow-node {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  flex:1;
+  background:var(--card);
+  border:1px solid var(--border);
+  font-family:var(--font-B);
+  font-size:15px;
+}
+.flow-node.accent { background:var(--blue); border-color:var(--blue); }
+.flow-node-sub {
+  font-family:var(--font-R);
+  font-size:10px; color:var(--ink-sub);
+  letter-spacing:1px; text-transform:uppercase;
+  margin-top:4px;
+}
+.flow-node.accent .flow-node-sub { color:rgba(255,255,255,0.6); }
+.flow-arrow {
+  display:flex; align-items:center; justify-content:center;
+  width:28px; flex-shrink:0;
+  color:var(--blue);
+  font-size:18px;
+}
+.var-cards {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:16px; margin-bottom:28px;
+}
+.var-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-left-width:3px;
+  padding:20px 22px;
+}
+.var-card-num {
+  font-family:var(--font-EB);
+  font-size:36px; line-height:1;
+  margin-bottom:8px;
+}
+.var-card-title {
+  font-family:var(--font-B);
+  font-size:15px; margin-bottom:6px;
+}
+.var-card-body {
+  font-family:var(--font-L);
+  font-size:13px; line-height:1.6;
+  color:var(--ink-dim);
+}
+.types-row {
+  display:flex; gap:1px;
+  border-top:1px solid var(--border);
+  padding-top:22px;
+}
+.type-cell {
+  flex:1; text-align:center;
+}
+.type-code {
+  font-family:var(--font-EB);
+  font-size:22px;
+}
+.type-name {
+  font-family:var(--font-R);
+  font-size:10px; color:var(--ink-sub);
+  margin-top:3px;
+}
+
+/* ══ SLIDE 09 AWD vs 4WD ════════════════ */
+.cmp-table { width:100%; border-collapse:collapse; }
+.cmp-table th {
+  font-family:var(--font-B);
+  font-size:11px; letter-spacing:1.5px;
+  text-transform:uppercase;
+  padding:12px 18px;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+  color:var(--ink-sub);
+}
+.cmp-table th.awd-head { color:var(--green); border-bottom-color:var(--green); }
+.cmp-table th.fwd-head { color:var(--orange); border-bottom-color:var(--orange); }
+.cmp-table td {
+  font-family:var(--font-L);
+  font-size:14px;
+  padding:13px 18px;
+  border-bottom:1px solid var(--border);
+  color:var(--ink-dim);
+  vertical-align:top;
+}
+.cmp-table td:first-child {
+  font-family:var(--font-B);
+  font-size:11px; letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--ink-sub);
+  width:130px;
+}
+
+/* ══ SLIDE 10 WEIGHT DISTRIBUTION ══════ */
+.wt-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+.wt-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-top-width:3px;
+  padding:20px;
+}
+.wt-code { font-family:var(--font-EB); font-size:24px; margin-bottom:12px; }
+.wt-label { font-family:var(--font-R); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink-sub); margin-bottom:14px; }
+.wt-bar-row { margin-bottom:8px; }
+.wt-bar-head { display:flex; justify-content:space-between; margin-bottom:4px; }
+.wt-bar-key { font-family:var(--font-R); font-size:10px; color:var(--ink-sub); }
+.wt-bar-val { font-family:var(--font-B); font-size:12px; }
+.wt-bar-track { height:8px; background:rgba(255,255,255,0.06); }
+.wt-bar-fill  { height:100%; }
+.wt-note { font-family:var(--font-L); font-size:11px; color:var(--ink-sub); line-height:1.5; margin-top:10px; }
+
+/* ══ SLIDE 11 OVERALL COMPARISON ═══════ */
+.ov-table { width:100%; border-collapse:collapse; }
+.ov-table th {
+  font-family:var(--font-B); font-size:12px;
+  padding:10px 14px;
+  text-align:center;
+  border-bottom:2px solid var(--border);
+  color:var(--ink-sub);
+}
+.ov-table th:first-child { text-align:left; }
+.ov-table th.hi { border-bottom-color:var(--blue); color:var(--ink); }
+.ov-table td {
+  font-family:var(--font-L); font-size:13px;
+  padding:11px 14px;
+  border-bottom:1px solid var(--border);
+  text-align:center;
+  color:var(--ink-dim);
+}
+.ov-table td:first-child {
+  text-align:left;
+  font-family:var(--font-B); font-size:11px;
+  letter-spacing:1px; text-transform:uppercase;
+  color:var(--ink-sub);
+}
+.ov-table tr:last-child td { border-bottom:none; }
+.pip { display:inline-flex; gap:3px; }
+.p  { width:8px; height:8px; border-radius:50%; background:var(--blue); }
+.pe { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.1); }
+
+/* ══ SLIDE 12 EV ════════════════════════ */
+.ev-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:22px; }
+.ev-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-top:2px solid var(--green);
+  padding:18px;
+}
+.ev-card-num { font-family:var(--font-EB); font-size:32px; color:var(--green); line-height:1; margin-bottom:8px; }
+.ev-card-title { font-family:var(--font-B); font-size:14px; margin-bottom:6px; }
+.ev-card-body { font-family:var(--font-L); font-size:12px; line-height:1.6; color:var(--ink-dim); }
+.ev-car-row {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:1px; background:var(--border);
+  border:1px solid var(--border);
+}
+.ev-car-cell {
+  background:var(--card);
+  padding:14px 16px;
+}
+.ev-car-name { font-family:var(--font-B); font-size:13px; margin-bottom:4px; }
+.ev-car-spec { font-family:var(--font-L); font-size:11px; color:var(--ink-sub); line-height:1.5; }
+.ev-car-badge {
+  font-family:var(--font-B); font-size:9px;
+  letter-spacing:1.5px; text-transform:uppercase;
+  padding:3px 7px;
+  color:#fff;
+  background:var(--green);
+  display:inline-block;
+  margin-top:6px;
+}
+
+/* ══ SLIDE 13 WRAP-UP ═══════════════════ */
+.wu-grid { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+.wu-summary { display:flex; flex-direction:column; gap:0; }
+.wu-row {
+  display:flex; align-items:center; gap:20px;
+  padding:14px 0;
+  border-bottom:1px solid var(--border);
+}
+.wu-row:last-child { border-bottom:none; }
+.wu-code { font-family:var(--font-EB); font-size:28px; width:56px; flex-shrink:0; }
+.wu-desc { }
+.wu-desc-main { font-family:var(--font-B); font-size:14px; margin-bottom:3px; }
+.wu-desc-sub { font-family:var(--font-L); font-size:12px; color:var(--ink-dim); line-height:1.5; }
+.wu-activities { display:flex; flex-direction:column; gap:10px; }
+.wu-act {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-left:3px solid;
+  padding:16px 18px;
+  display:flex; align-items:flex-start; gap:14px;
+}
+.wu-act-n { font-family:var(--font-EB); font-size:22px; line-height:1; flex-shrink:0; }
+.wu-act-text { font-family:var(--font-L); font-size:13px; line-height:1.6; color:var(--ink-dim); }
+.wu-q {
+  background:rgba(28,105,212,0.12);
+  border:1px solid rgba(28,105,212,0.3);
+  border-left:3px solid var(--blue);
+  padding:18px 20px;
+  margin-top:10px;
+}
+.wu-q-label { font-family:var(--font-B); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--blue); margin-bottom:8px; }
+.wu-q-text { font-family:var(--font-EBK); font-size:15px; line-height:1.6; }
+
+</style>
+</head>
+<body>
+
+<div id="wrap"><div id="scaler">
+
+<!-- ████ SLIDE 01 — HERO ████ -->
+<div class="s on" id="s1">
+
+  <!-- Right: large SVG hero visual -->
+  <div style="position:absolute;top:0;right:0;bottom:0;width:580px;overflow:hidden;z-index:1;">
+    <!-- Background gradient -->
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(28,105,212,0.08) 0%,transparent 55%);"></div>
+    <div style="position:absolute;left:0;top:0;bottom:0;width:120px;background:linear-gradient(to right,var(--canvas),transparent);z-index:2;"></div>
+
+    <svg viewBox="0 0 580 720" width="580" height="720" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
+      <!-- Large decorative drivetrain icons — stacked vertically -->
+      <g opacity="0.15">
+        <!-- FF label -->
+        <text x="80" y="148" font-family="sans-serif" font-weight="900" font-size="100" fill="#1c69d4">FF</text>
+        <text x="80" y="288" font-family="sans-serif" font-weight="900" font-size="100" fill="#22c55e">FR</text>
+        <text x="80" y="428" font-family="sans-serif" font-weight="900" font-size="100" fill="#f59e0b">MR</text>
+        <text x="80" y="568" font-family="sans-serif" font-weight="900" font-size="100" fill="#ef4444">RR</text>
+      </g>
+
+      <!-- Vertical accent line -->
+      <line x1="56" y1="60" x2="56" y2="660" stroke="rgba(28,105,212,0.3)" stroke-width="1"/>
+
+      <!-- Small car silhouettes (side view) — 4 types stacked -->
+      <!-- Each car: compact side-view silhouette at 240×70 -->
+      <!-- FF car @ y=80 -->
+      <g transform="translate(80,80)" opacity="0.7">
+        <rect x="20" y="20" width="200" height="40" fill="rgba(28,105,212,0.15)" stroke="rgba(28,105,212,0.5)" stroke-width="1"/>
+        <polygon points="40,20 65,4 165,4 185,20" fill="rgba(28,105,212,0.1)" stroke="rgba(28,105,212,0.4)" stroke-width="1"/>
+        <circle cx="52" cy="62" r="14" fill="none" stroke="#1c69d4" stroke-width="2.5"/>
+        <circle cx="52" cy="62" r="6" fill="#1c69d4" opacity="0.6"/>
+        <circle cx="180" cy="62" r="14" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+        <!-- Power arrow FF -->
+        <path d="M68,40 L52,50" stroke="#1c69d4" stroke-width="2" fill="none" marker-end="url(#ha)"/>
+        <text x="78" y="12" font-family="sans-serif" font-size="9" fill="#1c69d4" letter-spacing="2" font-weight="700">FF FRONT ENGINE · FRONT DRIVE</text>
+      </g>
+      <!-- FR car @ y=220 -->
+      <g transform="translate(80,220)" opacity="0.7">
+        <rect x="20" y="20" width="200" height="40" fill="rgba(34,197,94,0.1)" stroke="rgba(34,197,94,0.4)" stroke-width="1"/>
+        <polygon points="40,20 65,4 165,4 185,20" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.3)" stroke-width="1"/>
+        <circle cx="52" cy="62" r="14" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+        <circle cx="180" cy="62" r="14" fill="none" stroke="#22c55e" stroke-width="2.5"/>
+        <circle cx="180" cy="62" r="6" fill="#22c55e" opacity="0.6"/>
+        <line x1="52" y1="40" x2="180" y2="40" stroke="rgba(34,197,94,0.3)" stroke-width="2" stroke-dasharray="6,4"/>
+        <path d="M164,35 L180,50" stroke="#22c55e" stroke-width="2" fill="none" marker-end="url(#ha2)"/>
+        <text x="78" y="12" font-family="sans-serif" font-size="9" fill="#22c55e" letter-spacing="2" font-weight="700">FR FRONT ENGINE · REAR DRIVE</text>
+      </g>
+      <!-- MR car @ y=360 -->
+      <g transform="translate(80,360)" opacity="0.7">
+        <rect x="20" y="20" width="200" height="40" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.4)" stroke-width="1"/>
+        <polygon points="40,20 65,4 165,4 185,20" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)" stroke-width="1"/>
+        <circle cx="52" cy="62" r="14" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+        <circle cx="180" cy="62" r="14" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+        <circle cx="180" cy="62" r="6" fill="#f59e0b" opacity="0.6"/>
+        <rect x="98" y="26" width="44" height="28" fill="rgba(245,158,11,0.4)" stroke="#f59e0b" stroke-width="1"/>
+        <path d="M142,45 L180,50" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#ha3)"/>
+        <text x="78" y="12" font-family="sans-serif" font-size="9" fill="#f59e0b" letter-spacing="2" font-weight="700">MR MID ENGINE · REAR DRIVE</text>
+      </g>
+      <!-- RR car @ y=500 -->
+      <g transform="translate(80,500)" opacity="0.7">
+        <rect x="20" y="20" width="200" height="40" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.4)" stroke-width="1"/>
+        <polygon points="40,20 65,4 165,4 185,20" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+        <circle cx="52" cy="62" r="14" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+        <circle cx="180" cy="62" r="14" fill="none" stroke="#ef4444" stroke-width="2.5"/>
+        <circle cx="180" cy="62" r="6" fill="#ef4444" opacity="0.6"/>
+        <rect x="185" y="26" width="34" height="28" fill="rgba(239,68,68,0.4)" stroke="#ef4444" stroke-width="1"/>
+        <path d="M185,45 L180,52" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#ha4)"/>
+        <text x="78" y="12" font-family="sans-serif" font-size="9" fill="#ef4444" letter-spacing="2" font-weight="700">RR REAR ENGINE · REAR DRIVE</text>
+      </g>
+
+      <defs>
+        <marker id="ha"  viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M1,1L7,4L1,7Z" fill="#1c69d4"/></marker>
+        <marker id="ha2" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M1,1L7,4L1,7Z" fill="#22c55e"/></marker>
+        <marker id="ha3" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M1,1L7,4L1,7Z" fill="#f59e0b"/></marker>
+        <marker id="ha4" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M1,1L7,4L1,7Z" fill="#ef4444"/></marker>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="hero-eyebrow" style="z-index:2;">구동 방식 · Drivetrain Types</div>
+
+  <div class="hero-title" style="z-index:2;">
+    자동차는<br>어떻게<br>움직일까?
+  </div>
+
+  <div class="hero-sub" style="z-index:2;">
+    왜 BMW와 포르쉐, 테슬라는<br>
+    서로 다른 구동 방식을 선택했을까?
+  </div>
+
+  <div class="hero-qs" style="z-index:2;">
+    <div class="hero-q">
+      <div class="hero-q-num">Q1</div>
+      <div class="hero-q-txt">엔진의 힘은 어떤 경로로 바퀴까지 전달될까?</div>
+    </div>
+    <div class="hero-q">
+      <div class="hero-q-num">Q2</div>
+      <div class="hero-q-txt">어느 바퀴를 굴리느냐에 따라 주행 성격이 달라질까?</div>
+    </div>
+  </div>
+
+  <div class="ft" style="z-index:10;">
+    <span class="ft-label">자동차 구동 방식</span>
+    <span class="ft-page">01 / 13</span>
+  </div>
+</div>
+
+
+<!-- ████ SLIDE 02 — 동력 전달 구조 ████ -->
+<div class="s" id="s2">
+  <div class="ch">기본 개념</div>
+  <h1 class="tt en" style="font-size:34px;">자동차의 기본 동력 전달 구조</h1>
+  <p class="st">두 가지 변수의 조합이 구동 방식을 결정한다</p>
+
+  <div class="body">
+    <!-- Flow strip -->
+    <div class="flow-strip">
+      <div class="flow-node accent">
+        <span>엔진 / 모터</span>
+        <span class="flow-node-sub">동력 발생</span>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node">
+        <span>변속기</span>
+        <span class="flow-node-sub">속도 변환</span>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node">
+        <span>구동 장치</span>
+        <span class="flow-node-sub">힘 전달</span>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="background:#0f1e33;border-color:rgba(28,105,212,0.4);">
+        <span style="color:#6ab0f5;">구동 바퀴</span>
+        <span class="flow-node-sub">이동 실행</span>
+      </div>
+    </div>
+
+    <!-- Two key variables -->
+    <div class="var-cards">
+      <div class="var-card" style="border-left-color:var(--blue);">
+        <div class="var-card-num" style="color:var(--blue);">01</div>
+        <div class="var-card-title">엔진 위치</div>
+        <div class="var-card-body">Front(앞) · Mid(중앙) · Rear(뒤)<br>엔진이 차체 어디에 위치하는가에 따라 무게 배분과 설계 구조가 결정된다.</div>
+      </div>
+      <div class="var-card" style="border-left-color:var(--gold);">
+        <div class="var-card-num" style="color:var(--gold);">02</div>
+        <div class="var-card-title">구동 바퀴 위치</div>
+        <div class="var-card-body">Front(전륜) · Rear(후륜) · All(사륜)<br>힘을 전달받는 바퀴가 어디냐에 따라 주행 특성이 근본적으로 달라진다.</div>
+      </div>
+    </div>
+
+    <!-- Type strip -->
+    <div class="types-row">
+      <div class="type-cell"><div class="type-code" style="color:var(--blue);">FF</div><div class="type-name">전륜구동</div></div>
+      <div class="type-cell"><div class="type-code" style="color:var(--green);">FR</div><div class="type-name">후륜구동</div></div>
+      <div class="type-cell"><div class="type-code" style="color:var(--gold);">MR</div><div class="type-name">미드십</div></div>
+      <div class="type-cell"><div class="type-code" style="color:var(--red);">RR</div><div class="type-name">후미엔진</div></div>
+      <div class="type-cell"><div class="type-code" style="color:var(--purple);">AWD</div><div class="type-name">전자제어 사륜</div></div>
+      <div class="type-cell"><div class="type-code" style="color:var(--orange);">4WD</div><div class="type-name">오프로드 사륜</div></div>
+    </div>
+  </div>
+
+  <div class="ft">
+    <span class="ft-label">자동차 구동 방식</span>
+    <span class="ft-page">02 / 13</span>
+  </div>
+</div>
+
+
+<!-- ████ SLIDE 03 — FF ████ -->
+<div class="s" id="s3">
+  <!-- Full-bleed left diagram zone -->
+  <div class="dt-wrap left-diagram" style="position:absolute;inset:0;z-index:1;">
+    <div class="dt-diagram-zone" style="background:#0b1520;">
+      <!-- Gradient blend to right -->
+      <div style="position:absolute;inset:0;background:linear-gradient(to right,transparent 70%,var(--canvas) 100%);z-index:2;"></div>
+
+      <svg viewBox="0 0 520 580" width="520" height="580" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+        <defs>
+          <marker id="ff-arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M0,0L10,5L0,10Z" fill="#1c69d4"/>
+          </marker>
+          <filter id="glow-ff">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Car body — side view, centered -->
+        <!-- Body shell -->
+        <g transform="translate(60,170)">
+          <!-- Main body -->
+          <rect x="10" y="55" width="380" height="100" rx="0" fill="#1a2535" stroke="#2a3a50" stroke-width="1.5"/>
+          <!-- Cabin -->
+          <polygon points="60,55 100,12 290,12 340,55" fill="#142030" stroke="#2a3a50" stroke-width="1.5"/>
+          <!-- Windows -->
+          <polygon points="68,55 104,18 188,18 188,55" fill="rgba(100,180,255,0.07)" stroke="rgba(100,180,255,0.12)" stroke-width="1"/>
+          <rect x="194" y="18" width="90" height="37" fill="rgba(100,180,255,0.07)" stroke="rgba(100,180,255,0.12)" stroke-width="1"/>
+          <polygon points="290" fill="none"/>
+          <polygon points="290,18 330,18 334,55 290,55" fill="rgba(100,180,255,0.07)" stroke="rgba(100,180,255,0.12)" stroke-width="1"/>
+
+          <!-- Engine block (front) highlighted -->
+          <rect x="14" y="62" width="100" height="86" fill="#1c69d4" opacity="0.9"/>
+          <text x="64" y="102" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#fff" font-weight="700">ENGINE</text>
+          <text x="64" y="118" text-anchor="middle" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)">FRONT</text>
+
+          <!-- Front wheel (DRIVE) — blue, glowing -->
+          <circle cx="82" cy="158" r="44" fill="#0b1a2d" stroke="#1c69d4" stroke-width="3" filter="url(#glow-ff)"/>
+          <circle cx="82" cy="158" r="30" fill="#0d1f38" stroke="#1c69d4" stroke-width="1.5"/>
+          <!-- Spokes -->
+          <line x1="82" y1="128" x2="82" y2="188" stroke="#1c69d4" stroke-width="1.5" opacity="0.6"/>
+          <line x1="52" y1="158" x2="112" y2="158" stroke="#1c69d4" stroke-width="1.5" opacity="0.6"/>
+          <line x1="61" y1="137" x2="103" y2="179" stroke="#1c69d4" stroke-width="1.5" opacity="0.6"/>
+          <line x1="103" y1="137" x2="61" y2="179" stroke="#1c69d4" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="82" cy="158" r="10" fill="#1c69d4"/>
+          <circle cx="82" cy="158" r="4" fill="#fff"/>
+
+          <!-- Rear wheel (FREE) — dim -->
+          <circle cx="318" cy="158" r="44" fill="#0b1218" stroke="#2a3540" stroke-width="2"/>
+          <circle cx="318" cy="158" r="30" fill="#0d1520" stroke="#2a3540" stroke-width="1"/>
+          <line x1="318" y1="128" x2="318" y2="188" stroke="#2a3540" stroke-width="1.5"/>
+          <line x1="288" y1="158" x2="348" y2="158" stroke="#2a3540" stroke-width="1.5"/>
+          <circle cx="318" cy="158" r="10" fill="#1a2535"/>
+          <circle cx="318" cy="158" r="4" fill="#2a3540"/>
+
+          <!-- Power flow path from engine to front wheel -->
+          <path d="M114,105 Q130,130 116,148 Q104,162 92,162" stroke="#1c69d4" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#glow-ff)" marker-end="url(#ff-arr)" opacity="0.9"/>
+
+          <!-- DRIVE / FREE labels -->
+          <text x="82" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1c69d4" font-weight="700" letter-spacing="2">DRIVE</text>
+          <text x="318" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2a3a50" letter-spacing="2">FREE</text>
+        </g>
+
+        <!-- Weight distribution bar -->
+        <g transform="translate(60,430)">
+          <text x="0" y="0" font-family="sans-serif" font-size="10" fill="#5e6f7d" letter-spacing="2">WEIGHT DISTRIBUTION</text>
+          <rect x="0" y="12" width="400" height="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <!-- Front 60% -->
+          <rect x="0" y="12" width="240" height="16" fill="#1c69d4" opacity="0.7"/>
+          <text x="120" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#fff" font-weight="700">Front  60%</text>
+          <text x="320" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#5e6f7d">Rear  40%</text>
+        </g>
+
+        <!-- Chapter label on diagram -->
+        <text x="60" y="50" font-family="sans-serif" font-size="10" fill="#1c69d4" letter-spacing="3" font-weight="700">FF · FRONT ENGINE · FRONT WHEEL DRIVE</text>
+        <line x1="60" y1="58" x2="440" y2="58" stroke="rgba(28,105,212,0.25)" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <!-- Info panel -->
+    <div class="dt-info" style="position:relative;">
+      <div class="dt-accent-line" style="background:var(--blue);"></div>
+
+      <div class="dt-type" style="color:var(--blue);">FF</div>
+      <div class="dt-full-name">Front Engine · Front Wheel Drive</div>
+      <div class="dt-divider" style="background:var(--blue);"></div>
+
+      <div class="chips">
+        <span class="chip">현대 아반떼</span>
+        <span class="chip">기아 K5</span>
+        <span class="chip">Toyota Camry</span>
+        <span class="chip">VW Golf</span>
+      </div>
+
+      <div class="pc-grid">
+        <div class="pro">
+          <div class="pc-head pro">장점</div>
+          <div class="pc-item">생산 비용이 저렴하다</div>
+          <div class="pc-item">실내 공간 활용 우수</div>
+          <div class="pc-item">연비가 상대적으로 좋다</div>
+          <div class="pc-item">빗길 직진 안정성 양호</div>
+        </div>
+        <div class="con">
+          <div class="pc-head con">단점</div>
+          <div class="pc-item">언더스티어 경향 발생</div>
+          <div class="pc-item">고출력 대응에 한계</div>
+          <div class="pc-item">앞바퀴 부하 집중</div>
+          <div class="pc-item">스포츠 감각 부족</div>
+        </div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-item">
+          <div class="stat-num" style="color:var(--blue);">60:40</div>
+          <div class="stat-lbl">앞·뒤 무게 배분</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:var(--green);">★★★★★</div>
+          <div class="stat-lbl">공간 효율</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:var(--ink-sub);">★★</div>
+          <div class="stat-lbl">스포츠성</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ft" style="z-index:20;">
+    <span class="ft-label">자동차 구동 방식</span>
+    <span class="ft-page">03 / 13</span>
+  </div>
+</div>
+
+
+<!-- ████ SLIDE 04 — FR ████ -->
+<div class="s" id="s4">
+  <div class="dt-wrap right-diagram" style="position:absolute;inset:0;z-index:1;">
+    <div class="dt-info" style="position:relative;padding-left:var(--px);padding-right:36px;">
+      <div class="dt-accent-line" style="background:var(--green);right:0;left:auto;"></div>
+
+      <div class="dt-type" style="color:var(--green);">FR</div>
+      <div class="dt-full-name">Front Engine · Rear Wheel Drive</div>
+      <div class="dt-divider" style="background:var(--green);"></div>
+
+      <div class="chips">
+        <span class="chip">BMW 3·5시리즈</span>
+        <span class="chip">Mercedes C클래스</span>
+        <span class="chip">Genesis G70</span>
+        <span class="chip">Ford Mustang</span>
+      </div>
+
+      <div class="pc-grid">
+        <div class="pro">
+          <div class="pc-head pro">장점</div>
+          <div class="pc-item">뛰어난 조향감·핸들링</div>
+          <div class="pc-item">이상적 50:50 무게 배분</div>
+          <div class="pc-item">스포츠 드라이빙 최적</div>
+          <div class="pc-item">앞바퀴 부하 분산</div>
+        </div>
+        <div class="con">
+          <div class="pc-head con">단점</div>
+          <div class="pc-item">눈길·빗길 구동력 약함</div>
+          <div class="pc-item">프로펠러 샤프트로 공간 손실</div>
+          <div class="pc-item">제작 비용 상승</div>
+          <div class="pc-item">오버스티어 제어 필요</div>
+        </div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-item">
+          <div class="stat-num" style="color:var(--green);">50:50</div>
+          <div class="stat-lbl">이상적 무게 배분</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:var(--green);">★★★★★</div>
+          <div class="stat-lbl">스포츠성</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color:var(--ink-sub);">★★</div>
+          <div class="stat-lbl">눈길 성능</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dt-diagram-zone" style="background:#0b1f14;">
+      <div style="position:absolute;inset:0;background:linear-gradient(to left,transparent 70%,var(--canvas) 100%);z-index:2;"></div>
+      <svg viewBox="0 0 520 580" width="520" height="580" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+        <defs>
+          <marker id="fr-arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M0,0L10,5L0,10Z" fill="#22c55e"/>
+          </marker>
+          <filter id="glow-fr"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+
+        <text x="60" y="50" font-family="sans-serif" font-size="10" fill="#22c55e" letter-spacing="3" font-weight="700">FR · FRONT ENGINE · REAR WHEEL DRIVE</text>
+        <line x1="60" y1="58" x2="440" y2="58" stroke="rgba(34,197,94,0.25)" stroke-width="1"/>
+
+        <g transform="translate(60,170)">
+          <rect x="10" y="55" width="380" height="100" fill="#152518" stroke="#223520" stroke-width="1.5"/>
+          <polygon points="60,55 100,12 290,12 340,55" fill="#102010" stroke="#223520" stroke-width="1.5"/>
+          <polygon points="68,55 104,18 188,18 188,55" fill="rgba(100,200,120,0.05)" stroke="rgba(100,200,120,0.1)" stroke-width="1"/>
+          <rect x="194" y="18" width="90" height="37" fill="rgba(100,200,120,0.05)" stroke="rgba(100,200,120,0.1)" stroke-width="1"/>
+
+          <!-- Engine front -->
+          <rect x="14" y="62" width="90" height="86" fill="#183a20" stroke="#22c55e" stroke-width="1" opacity="0.8"/>
+          <text x="59" y="102" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#22c55e" font-weight="700">ENGINE</text>
+
+          <!-- Propeller shaft -->
+          <line x1="104" y1="105" x2="296" y2="105" stroke="rgba(34,197,94,0.3)" stroke-width="4" stroke-dasharray="10,6"/>
+          <text x="200" y="98" text-anchor="middle" font-family="sans-serif" font-size="9" fill="rgba(34,197,94,0.5)">PROP SHAFT</text>
+
+          <!-- Differential -->
+          <rect x="290" y="88" width="36" height="34" fill="#1a3525" stroke="#22c55e" stroke-width="1"/>
+          <text x="308" y="109" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#22c55e">DIFF</text>
+
+          <!-- Front wheel FREE -->
+          <circle cx="82" cy="158" r="44" fill="#0b1510" stroke="#1a2820" stroke-width="2"/>
+          <circle cx="82" cy="158" r="30" fill="#0d1a12" stroke="#1a2820" stroke-width="1"/>
+          <line x1="82" y1="128" x2="82" y2="188" stroke="#1a2820" stroke-width="1.5"/>
+          <line x1="52" y1="158" x2="112" y2="158" stroke="#1a2820" stroke-width="1.5"/>
+          <circle cx="82" cy="158" r="10" fill="#1a2820"/>
+          <circle cx="82" cy="158" r="4" fill="#2a3528"/>
+
+          <!-- Rear wheel DRIVE -->
+          <circle cx="318" cy="158" r="44" fill="#0b180e" stroke="#22c55e" stroke-width="3" filter="url(#glow-fr)"/>
+          <circle cx="318" cy="158" r="30" fill="#0f2014" stroke="#22c55e" stroke-width="1.5"/>
+          <line x1="318" y1="128" x2="318" y2="188" stroke="#22c55e" stroke-width="1.5" opacity="0.6"/>
+          <line x1="288" y1="158" x2="348" y2="158" stroke="#22c55e" stroke-width="1.5" opacity="0.6"/>
+          <line x1="297" y1="137" x2="339" y2="179" stroke="#22c55e" stroke-width="1.5" opacity="0.6"/>
+          <line x1="339" y1="137" x2="297" y2="179" stroke="#22c55e" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="318" cy="158" r="10" fill="#22c55e"/>
+          <circle cx="318" cy="158" r="4" fill="#fff"/>
+
+          <!-- Power flow to rear -->
+          <path d="M326,122 Q328,140 326,148" stroke="#22c55e" stroke-width="3" fill="none" filter="url(#glow-fr)" marker-end="url(#fr-arr)"/>
+
+          <text x="82" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2a3528" letter-spacing="2">FREE</text>
+          <text x="318" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#22c55e" font-weight="700" letter-spacing="2">DRIVE</text>
+        </g>
+
+        <g transform="translate(60,430)">
+          <text x="0" y="0" font-family="sans-serif" font-size="10" fill="#5e6f7d" letter-spacing="2">WEIGHT DISTRIBUTION</text>
+          <rect x="0" y="12" width="400" height="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <rect x="0" y="12" width="200" height="16" fill="#22c55e" opacity="0.6"/>
+          <text x="100" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#fff" font-weight="700">Front  50%</text>
+          <text x="300" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#22c55e" font-weight="700">Rear  50%</text>
+          <rect x="200" y="12" width="200" height="16" fill="#22c55e" opacity="0.35"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="ft" style="z-index:20;"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">04 / 13</span></div>
+</div>
+
+
+<!-- ████ SLIDE 05 — MR ████ -->
+<div class="s" id="s5">
+  <div class="dt-wrap left-diagram" style="position:absolute;inset:0;z-index:1;">
+    <div class="dt-diagram-zone" style="background:#1a1200;">
+      <div style="position:absolute;inset:0;background:linear-gradient(to right,transparent 70%,var(--canvas) 100%);z-index:2;"></div>
+      <svg viewBox="0 0 520 580" width="520" height="580" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+        <defs>
+          <marker id="mr-arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0L10,5L0,10Z" fill="#f59e0b"/></marker>
+          <filter id="glow-mr"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <text x="60" y="50" font-family="sans-serif" font-size="10" fill="#f59e0b" letter-spacing="3" font-weight="700">MR · MID ENGINE · REAR WHEEL DRIVE</text>
+        <line x1="60" y1="58" x2="440" y2="58" stroke="rgba(245,158,11,0.25)" stroke-width="1"/>
+        <g transform="translate(60,170)">
+          <rect x="10" y="55" width="380" height="100" fill="#1e1500" stroke="#332500" stroke-width="1.5"/>
+          <polygon points="60,55 100,12 290,12 340,55" fill="#181000" stroke="#332500" stroke-width="1.5"/>
+          <polygon points="68,55 104,18 188,18 188,55" fill="rgba(245,158,11,0.05)" stroke="rgba(245,158,11,0.1)" stroke-width="1"/>
+          <rect x="194" y="18" width="90" height="37" fill="rgba(245,158,11,0.05)" stroke="rgba(245,158,11,0.1)" stroke-width="1"/>
+          <!-- MID engine block -->
+          <rect x="155" y="60" width="90" height="88" fill="#f59e0b" opacity="0.85"/>
+          <text x="200" y="102" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000" font-weight="700">MID</text>
+          <text x="200" y="116" text-anchor="middle" font-family="sans-serif" font-size="9" fill="rgba(0,0,0,0.6)">ENGINE</text>
+          <!-- Rear axle from mid engine -->
+          <line x1="245" y1="104" x2="296" y2="104" stroke="rgba(245,158,11,0.4)" stroke-width="3" stroke-dasharray="8,5"/>
+          <rect x="290" y="88" width="34" height="32" fill="#332000" stroke="#f59e0b" stroke-width="1"/>
+          <text x="307" y="107" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#f59e0b">DIFF</text>
+          <!-- Front FREE -->
+          <circle cx="82" cy="158" r="44" fill="#120d00" stroke="#2a2000" stroke-width="2"/>
+          <circle cx="82" cy="158" r="30" fill="#160f00" stroke="#2a2000" stroke-width="1"/>
+          <line x1="82" y1="128" x2="82" y2="188" stroke="#2a2000" stroke-width="1.5"/>
+          <line x1="52" y1="158" x2="112" y2="158" stroke="#2a2000" stroke-width="1.5"/>
+          <circle cx="82" cy="158" r="10" fill="#2a2000"/>
+          <circle cx="82" cy="158" r="4" fill="#332800"/>
+          <!-- Rear DRIVE -->
+          <circle cx="318" cy="158" r="44" fill="#1a1000" stroke="#f59e0b" stroke-width="3" filter="url(#glow-mr)"/>
+          <circle cx="318" cy="158" r="30" fill="#201500" stroke="#f59e0b" stroke-width="1.5"/>
+          <line x1="318" y1="128" x2="318" y2="188" stroke="#f59e0b" stroke-width="1.5" opacity="0.6"/>
+          <line x1="288" y1="158" x2="348" y2="158" stroke="#f59e0b" stroke-width="1.5" opacity="0.6"/>
+          <line x1="297" y1="137" x2="339" y2="179" stroke="#f59e0b" stroke-width="1.5" opacity="0.6"/>
+          <line x1="339" y1="137" x2="297" y2="179" stroke="#f59e0b" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="318" cy="158" r="10" fill="#f59e0b"/>
+          <circle cx="318" cy="158" r="4" fill="#fff"/>
+          <path d="M324,122 Q326,140 324,148" stroke="#f59e0b" stroke-width="3" fill="none" filter="url(#glow-mr)" marker-end="url(#mr-arr)"/>
+          <text x="82" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2a2000" letter-spacing="2">FREE</text>
+          <text x="318" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#f59e0b" font-weight="700" letter-spacing="2">DRIVE</text>
+        </g>
+        <g transform="translate(60,430)">
+          <text x="0" y="0" font-family="sans-serif" font-size="10" fill="#5e6f7d" letter-spacing="2">WEIGHT DISTRIBUTION</text>
+          <rect x="0" y="12" width="400" height="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <rect x="0" y="12" width="180" height="16" fill="rgba(245,158,11,0.4)"/>
+          <rect x="180" y="12" width="220" height="16" fill="#f59e0b" opacity="0.7"/>
+          <text x="90" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="rgba(255,255,255,0.7)">Front  45%</text>
+          <text x="290" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#fff" font-weight="700">Rear  55%</text>
+        </g>
+      </svg>
+    </div>
+    <div class="dt-info" style="position:relative;">
+      <div class="dt-accent-line" style="background:var(--gold);"></div>
+      <div class="dt-type" style="color:var(--gold);">MR</div>
+      <div class="dt-full-name">Mid Engine · Rear Wheel Drive</div>
+      <div class="dt-divider" style="background:var(--gold);"></div>
+      <div class="chips">
+        <span class="chip">Porsche Cayman</span>
+        <span class="chip">Ferrari 488 GTB</span>
+        <span class="chip">Lamborghini Huracán</span>
+        <span class="chip">Toyota MR2</span>
+      </div>
+      <div class="pc-grid">
+        <div class="pro">
+          <div class="pc-head pro">장점</div>
+          <div class="pc-item">이상적 무게 중심 배치</div>
+          <div class="pc-item">탁월한 코너링 성능</div>
+          <div class="pc-item">빠른 방향 전환 응답</div>
+          <div class="pc-item">레이싱카 최적 구조</div>
+        </div>
+        <div class="con">
+          <div class="pc-head con">단점</div>
+          <div class="pc-item">제작 비용 매우 높음</div>
+          <div class="pc-item">실내 공간 부족</div>
+          <div class="pc-item">일상 실용성 낮음</div>
+          <div class="pc-item">트렁크 공간 제한적</div>
+        </div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-item"><div class="stat-num" style="color:var(--gold);">45:55</div><div class="stat-lbl">앞·뒤 무게</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--green);">★★★★★</div><div class="stat-lbl">코너링</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--red);">★</div><div class="stat-lbl">실용성</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="ft" style="z-index:20;"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">05 / 13</span></div>
+</div>
+
+
+<!-- ████ SLIDE 06 — RR ████ -->
+<div class="s" id="s6">
+  <div class="dt-wrap right-diagram" style="position:absolute;inset:0;z-index:1;">
+    <div class="dt-info" style="position:relative;padding-left:var(--px);padding-right:36px;">
+      <div class="dt-accent-line" style="background:var(--red);right:0;left:auto;"></div>
+      <div class="dt-type" style="color:var(--red);">RR</div>
+      <div class="dt-full-name">Rear Engine · Rear Wheel Drive</div>
+      <div class="dt-divider" style="background:var(--red);"></div>
+      <div class="chips">
+        <span class="chip">Porsche 911</span>
+        <span class="chip">VW Beetle (구형)</span>
+        <span class="chip">Smart ForTwo</span>
+      </div>
+      <div class="pc-grid">
+        <div class="pro">
+          <div class="pc-head pro">장점</div>
+          <div class="pc-item">가속 시 탁월한 후륜 트랙션</div>
+          <div class="pc-item">구동축 불필요, 구조 단순</div>
+          <div class="pc-item">앞 공간 활용 가능</div>
+          <div class="pc-item">강한 가속 성능</div>
+        </div>
+        <div class="con">
+          <div class="pc-head con">단점</div>
+          <div class="pc-item">다루기 까다로운 거동</div>
+          <div class="pc-item">설계·튜닝 난이도 높음</div>
+          <div class="pc-item">엔진 냉각 어려움</div>
+          <div class="pc-item">고속 안정성 관리 필요</div>
+        </div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-item"><div class="stat-num" style="color:var(--red);">40:60</div><div class="stat-lbl">앞·뒤 무게</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--green);">★★★★</div><div class="stat-lbl">트랙션</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--ink-sub);">★★</div><div class="stat-lbl">다루기 쉬움</div></div>
+      </div>
+    </div>
+    <div class="dt-diagram-zone" style="background:#1a0808;">
+      <div style="position:absolute;inset:0;background:linear-gradient(to left,transparent 70%,var(--canvas) 100%);z-index:2;"></div>
+      <svg viewBox="0 0 520 580" width="520" height="580" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+        <defs>
+          <marker id="rr-arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0L10,5L0,10Z" fill="#ef4444"/></marker>
+          <filter id="glow-rr"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <text x="60" y="50" font-family="sans-serif" font-size="10" fill="#ef4444" letter-spacing="3" font-weight="700">RR · REAR ENGINE · REAR WHEEL DRIVE</text>
+        <line x1="60" y1="58" x2="440" y2="58" stroke="rgba(239,68,68,0.25)" stroke-width="1"/>
+        <g transform="translate(60,170)">
+          <rect x="10" y="55" width="380" height="100" fill="#200c0c" stroke="#340e0e" stroke-width="1.5"/>
+          <polygon points="60,55 100,12 290,12 340,55" fill="#180808" stroke="#340e0e" stroke-width="1.5"/>
+          <polygon points="68,55 104,18 188,18 188,55" fill="rgba(239,68,68,0.05)" stroke="rgba(239,68,68,0.1)" stroke-width="1"/>
+          <rect x="194" y="18" width="90" height="37" fill="rgba(239,68,68,0.05)" stroke="rgba(239,68,68,0.1)" stroke-width="1"/>
+          <!-- RR engine — beyond rear wheel -->
+          <rect x="330" y="60" width="56" height="88" fill="#ef4444" opacity="0.85"/>
+          <text x="358" y="102" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#fff" font-weight="700">REAR</text>
+          <text x="358" y="116" text-anchor="middle" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)">ENGINE</text>
+          <!-- Front FREE -->
+          <circle cx="82" cy="158" r="44" fill="#120606" stroke="#280a0a" stroke-width="2"/>
+          <circle cx="82" cy="158" r="30" fill="#160808" stroke="#280a0a" stroke-width="1"/>
+          <line x1="82" y1="128" x2="82" y2="188" stroke="#280a0a" stroke-width="1.5"/>
+          <line x1="52" y1="158" x2="112" y2="158" stroke="#280a0a" stroke-width="1.5"/>
+          <circle cx="82" cy="158" r="10" fill="#280a0a"/>
+          <circle cx="82" cy="158" r="4" fill="#340e0e"/>
+          <!-- Rear DRIVE -->
+          <circle cx="318" cy="158" r="44" fill="#1a0808" stroke="#ef4444" stroke-width="3" filter="url(#glow-rr)"/>
+          <circle cx="318" cy="158" r="30" fill="#200c0c" stroke="#ef4444" stroke-width="1.5"/>
+          <line x1="318" y1="128" x2="318" y2="188" stroke="#ef4444" stroke-width="1.5" opacity="0.6"/>
+          <line x1="288" y1="158" x2="348" y2="158" stroke="#ef4444" stroke-width="1.5" opacity="0.6"/>
+          <line x1="297" y1="137" x2="339" y2="179" stroke="#ef4444" stroke-width="1.5" opacity="0.6"/>
+          <line x1="339" y1="137" x2="297" y2="179" stroke="#ef4444" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="318" cy="158" r="10" fill="#ef4444"/>
+          <circle cx="318" cy="158" r="4" fill="#fff"/>
+          <!-- Engine connects directly to rear wheel -->
+          <path d="M330,104 Q322,120 322,128" stroke="#ef4444" stroke-width="3" fill="none" filter="url(#glow-rr)" marker-end="url(#rr-arr)"/>
+          <text x="82" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#280a0a" letter-spacing="2">FREE</text>
+          <text x="318" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#ef4444" font-weight="700" letter-spacing="2">DRIVE</text>
+        </g>
+        <g transform="translate(60,430)">
+          <text x="0" y="0" font-family="sans-serif" font-size="10" fill="#5e6f7d" letter-spacing="2">WEIGHT DISTRIBUTION</text>
+          <rect x="0" y="12" width="400" height="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <rect x="0" y="12" width="160" height="16" fill="rgba(239,68,68,0.35)"/>
+          <rect x="160" y="12" width="240" height="16" fill="#ef4444" opacity="0.7"/>
+          <text x="80" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="rgba(255,255,255,0.6)">Front  40%</text>
+          <text x="280" y="24" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#fff" font-weight="700">Rear  60%</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="ft" style="z-index:20;"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">06 / 13</span></div>
+</div>
+
+
+<!-- ████ SLIDE 07 — AWD ████ -->
+<div class="s" id="s7">
+  <div class="dt-wrap left-diagram" style="position:absolute;inset:0;z-index:1;">
+    <div class="dt-diagram-zone" style="background:#100a1f;">
+      <div style="position:absolute;inset:0;background:linear-gradient(to right,transparent 70%,var(--canvas) 100%);z-index:2;"></div>
+      <svg viewBox="0 0 520 580" width="520" height="580" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+        <defs>
+          <marker id="awd-arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0L10,5L0,10Z" fill="#a855f7"/></marker>
+          <filter id="glow-awd"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <text x="60" y="50" font-family="sans-serif" font-size="10" fill="#a855f7" letter-spacing="3" font-weight="700">AWD · ALL WHEEL DRIVE · 전자제어 사륜구동</text>
+        <line x1="60" y1="58" x2="440" y2="58" stroke="rgba(168,85,247,0.25)" stroke-width="1"/>
+        <!-- Top view schematic for AWD -->
+        <g transform="translate(60,100)">
+          <!-- Car top view -->
+          <rect x="120" y="40" width="160" height="360" fill="#16102a" stroke="#2a1a45" stroke-width="1.5"/>
+          <!-- Front grille detail -->
+          <rect x="140" y="40" width="120" height="12" fill="#1e163a" stroke="#2a1a45" stroke-width="1"/>
+          <text x="200" y="50" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#a855f7" opacity="0.7">FRONT</text>
+          <!-- Rear -->
+          <text x="200" y="408" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#a855f7" opacity="0.7">REAR</text>
+          <!-- Engine front -->
+          <rect x="140" y="56" width="120" height="55" fill="#1e1038" stroke="#a855f7" stroke-width="1" opacity="0.7"/>
+          <text x="200" y="87" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#a855f7">ENGINE</text>
+          <!-- Center diff -->
+          <rect x="158" y="185" width="84" height="50" fill="#2a1650" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="200" y="208" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#a855f7" font-weight="700">CENTER</text>
+          <text x="200" y="222" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#a855f7" font-weight="700">DIFF</text>
+          <!-- Shafts front + rear -->
+          <line x1="200" y1="111" x2="200" y2="185" stroke="rgba(168,85,247,0.5)" stroke-width="3" stroke-dasharray="8,5"/>
+          <line x1="200" y1="235" x2="200" y2="310" stroke="rgba(168,85,247,0.5)" stroke-width="3" stroke-dasharray="8,5"/>
+          <!-- Front diff -->
+          <rect x="167" y="111" width="66" height="32" fill="#1e1038" stroke="#a855f7" stroke-width="1" opacity="0.6"/>
+          <text x="200" y="131" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#a855f7">FRONT DIFF</text>
+          <!-- Rear diff -->
+          <rect x="167" y="310" width="66" height="32" fill="#1e1038" stroke="#a855f7" stroke-width="1" opacity="0.6"/>
+          <text x="200" y="330" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#a855f7">REAR DIFF</text>
+
+          <!-- 4 wheels ALL DRIVE -->
+          <!-- FL -->
+          <rect x="64" y="100" width="52" height="90" fill="#1a0f30" stroke="#a855f7" stroke-width="2.5" filter="url(#glow-awd)"/>
+          <text x="90" y="150" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#a855f7" font-weight="700">FL</text>
+          <!-- FR -->
+          <rect x="284" y="100" width="52" height="90" fill="#1a0f30" stroke="#a855f7" stroke-width="2.5" filter="url(#glow-awd)"/>
+          <text x="310" y="150" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#a855f7" font-weight="700">FR</text>
+          <!-- RL -->
+          <rect x="64" y="255" width="52" height="90" fill="#1a0f30" stroke="#a855f7" stroke-width="2.5" filter="url(#glow-awd)"/>
+          <text x="90" y="305" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#a855f7" font-weight="700">RL</text>
+          <!-- RR -->
+          <rect x="284" y="255" width="52" height="90" fill="#1a0f30" stroke="#a855f7" stroke-width="2.5" filter="url(#glow-awd)"/>
+          <text x="310" y="305" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#a855f7" font-weight="700">RR</text>
+          <!-- Driveshaft to wheels -->
+          <line x1="116" y1="143" x2="140" y2="143" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,3"/>
+          <line x1="260" y1="143" x2="284" y2="143" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,3"/>
+          <line x1="116" y1="300" x2="140" y2="300" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,3"/>
+          <line x1="260" y1="300" x2="284" y2="300" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,3"/>
+        </g>
+        <!-- DRIVE label for all wheels -->
+        <text x="200" y="520" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#a855f7" letter-spacing="3" font-weight="700">ALL FOUR WHEELS — ALWAYS DRIVE</text>
+      </svg>
+    </div>
+    <div class="dt-info" style="position:relative;">
+      <div class="dt-accent-line" style="background:var(--purple);"></div>
+      <div class="dt-type" style="color:var(--purple);">AWD</div>
+      <div class="dt-full-name">All Wheel Drive · 전자제어 상시 사륜구동</div>
+      <div class="dt-divider" style="background:var(--purple);"></div>
+      <div class="chips">
+        <span class="chip">Audi Quattro</span>
+        <span class="chip">BMW xDrive</span>
+        <span class="chip">Subaru WRX STI</span>
+        <span class="chip">현대 HTRAC</span>
+      </div>
+      <div class="pc-grid">
+        <div class="pro">
+          <div class="pc-head pro">장점</div>
+          <div class="pc-item">상시 4바퀴 구동력</div>
+          <div class="pc-item">전자 제어 자동 작동</div>
+          <div class="pc-item">눈길·빗길 최강 안정성</div>
+          <div class="pc-item">고성능과 안전성 양립</div>
+        </div>
+        <div class="con">
+          <div class="pc-head con">단점</div>
+          <div class="pc-item">구조 복잡, 무게 증가</div>
+          <div class="pc-item">연비 손실 5~10%</div>
+          <div class="pc-item">유지보수 비용 상승</div>
+          <div class="pc-item">일반 도로 체감차 작음</div>
+        </div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-item"><div class="stat-num" style="color:var(--purple);">4WD</div><div class="stat-lbl">상시 구동 바퀴</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--green);">★★★★★</div><div class="stat-lbl">눈길 안전성</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--ink-sub);">★★★</div><div class="stat-lbl">연비</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="ft" style="z-index:20;"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">07 / 13</span></div>
+</div>
+
+
+<!-- ████ SLIDE 08 — 4WD ████ -->
+<div class="s" id="s8">
+  <div class="dt-wrap right-diagram" style="position:absolute;inset:0;z-index:1;">
+    <div class="dt-info" style="position:relative;padding-left:var(--px);padding-right:36px;">
+      <div class="dt-accent-line" style="background:var(--orange);right:0;left:auto;"></div>
+      <div class="dt-type" style="color:var(--orange);">4WD</div>
+      <div class="dt-full-name">Four Wheel Drive · 수동 선택식 사륜구동</div>
+      <div class="dt-divider" style="background:var(--orange);"></div>
+      <div class="chips">
+        <span class="chip">Jeep Wrangler</span>
+        <span class="chip">Toyota Land Cruiser</span>
+        <span class="chip">Mercedes G-Wagon</span>
+        <span class="chip">Ford Bronco</span>
+      </div>
+      <div class="pc-grid">
+        <div class="pro">
+          <div class="pc-head pro">장점</div>
+          <div class="pc-item">오프로드 탈출력 최강</div>
+          <div class="pc-item">기계적 록킹 가능</div>
+          <div class="pc-item">진흙·암석·모래 정복</div>
+          <div class="pc-item">내구성·신뢰성 우수</div>
+        </div>
+        <div class="con">
+          <div class="pc-head con">단점</div>
+          <div class="pc-item">포장 도로 연비 불리</div>
+          <div class="pc-item">코너링 시 타이트한 느낌</div>
+          <div class="pc-item">무겁고 부피가 큼</div>
+          <div class="pc-item">수동 조작 필요</div>
+        </div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-item"><div class="stat-num" style="color:var(--orange);">2H/4H/4L</div><div class="stat-lbl">구동 모드 전환</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--green);">★★★★★</div><div class="stat-lbl">오프로드</div></div>
+        <div class="stat-item"><div class="stat-num" style="color:var(--ink-sub);">★★</div><div class="stat-lbl">연비</div></div>
+      </div>
+    </div>
+    <div class="dt-diagram-zone" style="background:#1a0f00;">
+      <div style="position:absolute;inset:0;background:linear-gradient(to left,transparent 70%,var(--canvas) 100%);z-index:2;"></div>
+      <svg viewBox="0 0 520 580" width="520" height="580" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+        <defs>
+          <filter id="glow-4wd"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <text x="60" y="50" font-family="sans-serif" font-size="10" fill="#f97316" letter-spacing="3" font-weight="700">4WD · FOUR WHEEL DRIVE · 수동 사륜구동</text>
+        <line x1="60" y1="58" x2="440" y2="58" stroke="rgba(249,115,22,0.25)" stroke-width="1"/>
+        <!-- Top view same structure but with transfer case label -->
+        <g transform="translate(60,90)">
+          <rect x="120" y="40" width="160" height="370" fill="#1f1000" stroke="#321800" stroke-width="1.5"/>
+          <text x="200" y="50" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#f97316" opacity="0.7">FRONT</text>
+          <rect x="140" y="56" width="120" height="55" fill="#2a1800" stroke="#f97316" stroke-width="1" opacity="0.7"/>
+          <text x="200" y="87" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#f97316">ENGINE</text>
+          <!-- Transfer case (key difference from AWD) -->
+          <rect x="150" y="190" width="100" height="54" fill="#3a2000" stroke="#f97316" stroke-width="2"/>
+          <text x="200" y="213" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#f97316" font-weight="700">TRANSFER</text>
+          <text x="200" y="227" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#f97316" font-weight="700">CASE</text>
+          <text x="200" y="238" text-anchor="middle" font-family="sans-serif" font-size="7" fill="rgba(249,115,22,0.6)">수동 전환</text>
+          <line x1="200" y1="111" x2="200" y2="190" stroke="rgba(249,115,22,0.5)" stroke-width="3" stroke-dasharray="8,5"/>
+          <line x1="200" y1="244" x2="200" y2="320" stroke="rgba(249,115,22,0.5)" stroke-width="3" stroke-dasharray="8,5"/>
+          <!-- 4 wheels -->
+          <rect x="60" y="100" width="56" height="95" fill="#201000" stroke="#f97316" stroke-width="2.5" filter="url(#glow-4wd)"/>
+          <text x="88" y="153" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#f97316" font-weight="700">FL</text>
+          <rect x="284" y="100" width="56" height="95" fill="#201000" stroke="#f97316" stroke-width="2.5" filter="url(#glow-4wd)"/>
+          <text x="312" y="153" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#f97316" font-weight="700">FR</text>
+          <rect x="60" y="260" width="56" height="95" fill="#201000" stroke="#f97316" stroke-width="2.5" filter="url(#glow-4wd)"/>
+          <text x="88" y="313" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#f97316" font-weight="700">RL</text>
+          <rect x="284" y="260" width="56" height="95" fill="#201000" stroke="#f97316" stroke-width="2.5" filter="url(#glow-4wd)"/>
+          <text x="312" y="313" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#f97316" font-weight="700">RR</text>
+          <line x1="116" y1="148" x2="140" y2="148" stroke="#f97316" stroke-width="2" stroke-dasharray="4,3"/>
+          <line x1="260" y1="148" x2="284" y2="148" stroke="#f97316" stroke-width="2" stroke-dasharray="4,3"/>
+          <line x1="116" y1="308" x2="140" y2="308" stroke="#f97316" stroke-width="2" stroke-dasharray="4,3"/>
+          <line x1="260" y1="308" x2="284" y2="308" stroke="#f97316" stroke-width="2" stroke-dasharray="4,3"/>
+          <text x="200" y="430" text-anchor="middle" font-family="sans-serif" font-size="8" fill="rgba(249,115,22,0.5)">2H → 4H → 4L 수동 전환</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="ft" style="z-index:20;"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">08 / 13</span></div>
+</div>
+
+
+<!-- ████ SLIDE 09 — AWD vs 4WD ████ -->
+<div class="s light" id="s9">
+  <div class="ch" style="color:var(--blue);">비교 분석</div>
+  <h1 class="tt en" style="color:#111;font-size:34px;">AWD vs 4WD — 무엇이 다를까?</h1>
+  <p class="st" style="color:#555;">같은 '사륜구동'이라는 이름이지만 목적과 구조가 근본적으로 다르다</p>
+
+  <div class="body">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;height:100%;">
+
+      <!-- AWD column -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-top:3px solid var(--purple);padding:20px 22px;">
+          <div style="font-family:var(--font-EB);font-size:28px;color:var(--purple);line-height:1;margin-bottom:4px;">AWD</div>
+          <div style="font-family:var(--font-L);font-size:12px;color:#666;margin-bottom:0;">All Wheel Drive · 승용차형 사륜구동</div>
+        </div>
+        <table class="cmp-table" style="background:#fff;border:1px solid #e5e7eb;">
+          <tr><th style="color:#888;border-bottom-color:#e5e7eb;background:#f9fafb;">항목</th><th class="awd-head" style="background:#f9fafb;">AWD</th></tr>
+          <tr><td style="color:#333;">사용 환경</td><td style="color:#444;">일반 도로 · 고속도로</td></tr>
+          <tr><td style="color:#333;">작동 방식</td><td style="color:#444;">전자 제어 자동 작동</td></tr>
+          <tr><td style="color:#333;">승차감</td><td style="color:#444;">세단급 부드러운 승차감</td></tr>
+          <tr><td style="color:#333;">연비 손실</td><td style="color:#444;">FR 대비 약 5~10%</td></tr>
+          <tr><td style="color:#333;">대표 차량</td><td style="color:#444;">Audi A4 · BMW X3 · Subaru</td></tr>
+        </table>
+        <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.15);padding:16px 18px;font-family:var(--font-L);font-size:13px;color:#444;line-height:1.65;">
+          일상에서 자동으로 작동. 빗길과 눈길의 안전성을 높이고, 고성능 스포츠카에도 적용되어 가속력을 극대화하는 현대적 사륜 시스템.
+        </div>
+      </div>
+
+      <!-- 4WD column -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-top:3px solid var(--orange);padding:20px 22px;">
+          <div style="font-family:var(--font-EB);font-size:28px;color:var(--orange);line-height:1;margin-bottom:4px;">4WD</div>
+          <div style="font-family:var(--font-L);font-size:12px;color:#666;margin-bottom:0;">Four Wheel Drive · 오프로드형 사륜구동</div>
+        </div>
+        <table class="cmp-table" style="background:#fff;border:1px solid #e5e7eb;">
+          <tr><th style="color:#888;border-bottom-color:#e5e7eb;background:#f9fafb;">항목</th><th class="fwd-head" style="background:#f9fafb;">4WD</th></tr>
+          <tr><td style="color:#333;">사용 환경</td><td style="color:#444;">오프로드 · 극한 험지</td></tr>
+          <tr><td style="color:#333;">작동 방식</td><td style="color:#444;">운전자 수동 전환</td></tr>
+          <tr><td style="color:#333;">승차감</td><td style="color:#444;">단단하고 투박한 편</td></tr>
+          <tr><td style="color:#333;">연비 손실</td><td style="color:#444;">2WD 대비 약 10~15%</td></tr>
+          <tr><td style="color:#333;">대표 차량</td><td style="color:#444;">Jeep Wrangler · Land Cruiser</td></tr>
+        </table>
+        <div style="background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.15);padding:16px 18px;font-family:var(--font-L);font-size:13px;color:#444;line-height:1.65;">
+          험한 지형 정복이 목적. 기계적 록킹 디퍼렌셜로 진흙·암석·모래에서 최강의 탈출력을 발휘하는 전통적 사륜 시스템.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ft" style="background:#e8eaed;border-color:rgba(0,0,0,0.08);">
+    <span class="ft-label" style="color:#888;">자동차 구동 방식</span>
+    <span class="ft-page" style="color:#888;">09 / 13</span>
+  </div>
+</div>
+
+
+<!-- ████ SLIDE 10 — 무게 배분 ████ -->
+<div class="s" id="s10">
+  <div class="ch">시각 비교</div>
+  <h1 class="tt en" style="font-size:34px;">구동 방식별 무게 배분 비교</h1>
+  <p class="st">앞뒤 무게 배분은 코너링 특성과 접지력을 결정하는 핵심 변수</p>
+
+  <div class="body" style="display:flex;flex-direction:column;gap:20px;">
+    <div class="wt-grid">
+      <div class="wt-card" style="border-top-color:var(--blue);">
+        <div class="wt-code" style="color:var(--blue);">FF</div>
+        <div class="wt-label">전륜구동</div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">앞</span><span class="wt-bar-val" style="color:var(--blue);">60%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:60%;background:var(--blue);opacity:0.8;"></div></div>
+        </div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">뒤</span><span class="wt-bar-val">40%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:40%;background:rgba(28,105,212,0.4);"></div></div>
+        </div>
+        <div class="wt-note">앞쪽 집중<br>언더스티어 경향</div>
+      </div>
+      <div class="wt-card" style="border-top-color:var(--green);">
+        <div class="wt-code" style="color:var(--green);">FR</div>
+        <div class="wt-label">후륜구동</div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">앞</span><span class="wt-bar-val" style="color:var(--green);">50%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:50%;background:var(--green);opacity:0.8;"></div></div>
+        </div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">뒤</span><span class="wt-bar-val" style="color:var(--green);">50%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:50%;background:var(--green);opacity:0.5;"></div></div>
+        </div>
+        <div class="wt-note" style="color:var(--green);">이상적 균형<br>최고의 핸들링</div>
+      </div>
+      <div class="wt-card" style="border-top-color:var(--gold);">
+        <div class="wt-code" style="color:var(--gold);">MR</div>
+        <div class="wt-label">미드십</div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">앞</span><span class="wt-bar-val">45%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:45%;background:rgba(245,158,11,0.5);"></div></div>
+        </div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">뒤</span><span class="wt-bar-val" style="color:var(--gold);">55%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:55%;background:var(--gold);opacity:0.8;"></div></div>
+        </div>
+        <div class="wt-note">뒤쪽 집중<br>최고 코너링 성능</div>
+      </div>
+      <div class="wt-card" style="border-top-color:var(--red);">
+        <div class="wt-code" style="color:var(--red);">RR</div>
+        <div class="wt-label">후미엔진</div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">앞</span><span class="wt-bar-val">40%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:40%;background:rgba(239,68,68,0.4);"></div></div>
+        </div>
+        <div class="wt-bar-row">
+          <div class="wt-bar-head"><span class="wt-bar-key">뒤</span><span class="wt-bar-val" style="color:var(--red);">60%</span></div>
+          <div class="wt-bar-track"><div class="wt-bar-fill" style="width:60%;background:var(--red);opacity:0.8;"></div></div>
+        </div>
+        <div class="wt-note">후미 집중<br>강한 트랙션·독특한 거동</div>
+      </div>
+    </div>
+
+    <!-- Summary insight -->
+    <div style="border-top:1px solid var(--border);padding-top:18px;display:flex;align-items:center;gap:48px;">
+      <div style="font-family:var(--font-L);font-size:13px;color:var(--ink-dim);line-height:1.65;flex:1;">
+        무게 배분이 <span style="font-family:var(--font-B);color:var(--green);">50:50</span>에 가까울수록 앞뒤 타이어에 동등한 부하가 걸려 조종 안정성이 향상된다. FR은 이상적인 배분의 기준이 되며, MR은 약간 후미 집중으로 코너링에 특화된다.
+      </div>
+      <div style="display:flex;gap:32px;flex-shrink:0;">
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-EB);font-size:18px;color:var(--green);margin-bottom:4px;">FR</div>
+          <div style="font-family:var(--font-R);font-size:10px;color:var(--ink-sub);letter-spacing:1px;">최적 배분</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-EB);font-size:18px;color:var(--gold);margin-bottom:4px;">MR</div>
+          <div style="font-family:var(--font-R);font-size:10px;color:var(--ink-sub);letter-spacing:1px;">코너링 최강</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-EB);font-size:18px;color:var(--purple);margin-bottom:4px;">AWD</div>
+          <div style="font-family:var(--font-R);font-size:10px;color:var(--ink-sub);letter-spacing:1px;">전천후 안전</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ft"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">10 / 13</span></div>
+</div>
+
+
+<!-- ████ SLIDE 11 — 종합 비교표 ████ -->
+<div class="s light" id="s11">
+  <div class="ch" style="color:var(--blue);">종합 비교</div>
+  <h1 class="tt en" style="color:#111;font-size:34px;">구동 방식별 장단점 종합 비교</h1>
+  <p class="st" style="color:#555;">5점 만점 기준 · 항목별 특성 비교</p>
+
+  <div class="body">
+    <table class="ov-table" style="background:#fff;">
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th style="color:var(--blue);">FF</th>
+          <th style="color:var(--green);">FR</th>
+          <th style="color:var(--gold);">MR</th>
+          <th style="color:var(--red);">RR</th>
+          <th style="color:var(--purple);">AWD</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>공간 효율</td>
+          <td><span class="pip"><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--gold);"></span><span class="pe"></span><span class="pe"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="pe"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="pe"></span><span class="pe"></span></span></td>
+        </tr>
+        <tr>
+          <td>연비</td>
+          <td><span class="pip"><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="pe"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="pe"></span><span class="pe"></span></span></td>
+        </tr>
+        <tr>
+          <td>스포츠 성능</td>
+          <td><span class="pip"><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="pe"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="pe"></span></span></td>
+        </tr>
+        <tr>
+          <td>눈길 안전성</td>
+          <td><span class="pip"><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="pe"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="pe"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span></span></td>
+        </tr>
+        <tr>
+          <td>코너링</td>
+          <td><span class="pip"><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="p" style="background:var(--blue);"></span><span class="pe"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="p" style="background:var(--green);"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span><span class="p" style="background:var(--gold);"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="p" style="background:var(--red);"></span><span class="pe"></span></span></td>
+          <td><span class="pip"><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="p" style="background:var(--purple);"></span><span class="pe"></span></span></td>
+        </tr>
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="font-size:10px;color:#aaa;">최적 선택</td>
+          <td style="font-family:var(--font-L);font-size:12px;color:#555;">경제·실용</td>
+          <td style="font-family:var(--font-L);font-size:12px;color:#555;">스포츠 세단</td>
+          <td style="font-family:var(--font-L);font-size:12px;color:#555;">순수 스포츠카</td>
+          <td style="font-family:var(--font-L);font-size:12px;color:#555;">개성파 스포츠</td>
+          <td style="font-family:var(--font-L);font-size:12px;color:#555;">전천후 안전</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ft" style="background:#e8eaed;border-color:rgba(0,0,0,0.08);">
+    <span class="ft-label" style="color:#888;">자동차 구동 방식</span>
+    <span class="ft-page" style="color:#888;">11 / 13</span>
+  </div>
+</div>
+
+
+<!-- ████ SLIDE 12 — 전기차 ████ -->
+<div class="s" id="s12">
+  <div class="ch" style="color:var(--green);">미래 기술</div>
+  <h1 class="tt en" style="font-size:34px;">전기차 시대의 구동 방식</h1>
+  <p class="st">모터 소형화로 앞뒤 독립 배치가 쉬워져 AWD 구현이 혁신적으로 단순해졌다</p>
+
+  <div class="body" style="display:flex;flex-direction:column;gap:20px;">
+    <div class="ev-grid">
+      <div class="ev-card">
+        <div class="ev-card-num">01</div>
+        <div class="ev-card-title">구동축 불필요</div>
+        <div class="ev-card-body">각 바퀴에 모터를 직접 장착 가능. 프로펠러 샤프트와 디퍼렌셜을 생략하여 설계 자유도가 획기적으로 상승.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-card-num">02</div>
+        <div class="ev-card-title">독립 토크 제어</div>
+        <div class="ev-card-body">각 모터를 1ms 이내로 독립 제어. 기계식 AWD보다 정밀한 토크 배분으로 코너링과 안정성이 동시에 향상.</div>
+      </div>
+      <div class="ev-card">
+        <div class="ev-card-num">03</div>
+        <div class="ev-card-title">스케이트보드 플랫폼</div>
+        <div class="ev-card-body">배터리를 차체 바닥 전체에 깔아 무게 중심을 극도로 낮춤. 자연스러운 50:50 무게 배분 실현.</div>
+      </div>
+    </div>
+
+    <div class="ev-car-row">
+      <div class="ev-car-cell">
+        <div class="ev-car-name">Tesla Model Y AWD</div>
+        <div class="ev-car-spec">듀얼 모터 · 0-100: 5.0초<br>항속거리 533km</div>
+        <span class="ev-car-badge">Dual Motor AWD</span>
+      </div>
+      <div class="ev-car-cell">
+        <div class="ev-car-name">현대 IONIQ 5 AWD</div>
+        <div class="ev-car-spec">전후륜 모터 · 0-100: 5.1초<br>800V 초급속 충전</div>
+        <span class="ev-car-badge">AWD</span>
+      </div>
+      <div class="ev-car-cell">
+        <div class="ev-car-name">기아 EV6 GT</div>
+        <div class="ev-car-spec">듀얼 모터 585hp<br>0-100: 3.5초</div>
+        <span class="ev-car-badge" style="background:var(--gold);color:#000;">Performance AWD</span>
+      </div>
+      <div class="ev-car-cell">
+        <div class="ev-car-name">Rimac Nevera</div>
+        <div class="ev-car-spec">4모터 독립 제어 1914hp<br>0-100: 1.97초</div>
+        <span class="ev-car-badge" style="background:var(--purple);">4-Motor AWD</span>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-family:var(--font-L);font-size:13px;color:var(--ink-dim);line-height:1.65;">
+        전기차의 핵심 장점: 배터리가 차체 바닥 중앙에 위치하여 <span style="font-family:var(--font-B);color:var(--green);">무게 배분이 자동으로 이상적인 50:50에 가까워진다.</span> 내연기관 차량이 수십 년에 걸쳐 해결하려 했던 무게 배분 문제를 플랫폼 설계 단계에서 원천 해결.
+      </div>
+    </div>
+  </div>
+
+  <div class="ft"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">12 / 13</span></div>
+</div>
+
+
+<!-- ████ SLIDE 13 — 정리 ████ -->
+<div class="s" id="s13">
+  <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right,var(--blue),var(--purple),var(--green));z-index:5;"></div>
+
+  <div class="ch">마무리</div>
+  <h1 class="tt">정리 및 탐구 활동</h1>
+  <p class="st">배운 내용을 실생활과 연결하여 탐구해 보자</p>
+
+  <div class="body">
+    <div class="wu-grid">
+      <!-- Left: summary -->
+      <div class="wu-summary">
+        <div class="wu-row">
+          <div class="wu-code" style="color:var(--blue);">FF</div>
+          <div class="wu-desc">
+            <div class="wu-desc-main">경제성 · 공간 효율 최우선</div>
+            <div class="wu-desc-sub">가장 대중적인 선택. 연비와 실내 공간을 동시에 잡는다.</div>
+          </div>
+        </div>
+        <div class="wu-row">
+          <div class="wu-code" style="color:var(--green);">FR</div>
+          <div class="wu-desc">
+            <div class="wu-desc-main">이상적 무게 배분 · 스포츠 세단의 정석</div>
+            <div class="wu-desc-sub">50:50 배분으로 운전의 즐거움을 극대화한다.</div>
+          </div>
+        </div>
+        <div class="wu-row">
+          <div class="wu-code" style="color:var(--gold);">MR</div>
+          <div class="wu-desc">
+            <div class="wu-desc-main">최고의 코너링 · 순수 스포츠카의 선택</div>
+            <div class="wu-desc-sub">중앙 엔진 배치로 질량 집중을 실현한다.</div>
+          </div>
+        </div>
+        <div class="wu-row">
+          <div class="wu-code" style="color:var(--red);">RR</div>
+          <div class="wu-desc">
+            <div class="wu-desc-main">강한 트랙션 · 전설적 포르쉐 911의 방식</div>
+            <div class="wu-desc-sub">독특한 거동이 경험 많은 드라이버를 매혹시킨다.</div>
+          </div>
+        </div>
+        <div class="wu-row" style="border-bottom:none;">
+          <div class="wu-code" style="color:var(--purple);">AWD</div>
+          <div class="wu-desc">
+            <div class="wu-desc-main">전천후 안전 · 전기차 시대의 표준</div>
+            <div class="wu-desc-sub">계절과 노면을 가리지 않는 가장 안전한 선택.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: activities + question -->
+      <div class="wu-activities">
+        <div class="wu-act" style="border-left-color:var(--blue);">
+          <div class="wu-act-n" style="color:var(--blue);">01</div>
+          <div class="wu-act-text">우리 집 자동차(또는 주변 차량)의 구동 방식을 조사하고, 제조사가 그 방식을 선택한 이유를 추론해 보자.</div>
+        </div>
+        <div class="wu-act" style="border-left-color:var(--gold);">
+          <div class="wu-act-n" style="color:var(--gold);">02</div>
+          <div class="wu-act-text">좋아하는 자동차 브랜드를 골라 그 회사의 구동 방식 철학(ex. BMW의 FR 고집, Subaru의 AWD)을 조사해 보자.</div>
+        </div>
+        <div class="wu-act" style="border-left-color:var(--green);">
+          <div class="wu-act-n" style="color:var(--green);">03</div>
+          <div class="wu-act-text">구동 방식이 다른 두 차량의 실제 주행 영상을 비교하며 코너링과 가속 특성의 차이를 관찰해 보자.</div>
+        </div>
+        <div class="wu-q">
+          <div class="wu-q-label">마무리 질문</div>
+          <div class="wu-q-text">여러분이라면 FF, FR, MR, RR, AWD 중<br>어떤 구동 방식을 선택하겠습니까?<br><span style="font-family:var(--font-L);font-size:13px;color:var(--ink-dim);">그 이유는 무엇입니까?</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ft"><span class="ft-label">자동차 구동 방식</span><span class="ft-page">13 / 13</span></div>
+</div>
+
+
+</div></div><!-- /scaler /wrap -->
+
+<div id="pbar"></div>
+<button class="nav" id="pv">&#8592;</button>
+<button class="nav" id="nx">&#8594;</button>
+
+<script>
+(function(){
+  const slides = document.querySelectorAll('.s');
+  const n = slides.length;
+  const scaler = document.getElementById('scaler');
+  const wrap   = document.getElementById('wrap');
+  const bar    = document.getElementById('pbar');
+  let cur = 0;
+
+  function resize(){
+    const s = Math.min(wrap.clientWidth/1280, wrap.clientHeight/720);
+    scaler.style.transform = `scale(${s})`;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function go(i){
+    slides[cur].classList.remove('on');
+    cur = ((i % n) + n) % n;
+    slides[cur].classList.add('on');
+    bar.style.width = ((cur+1)/n*100)+'%';
+  }
+  go(0);
+
+  document.getElementById('pv').onclick = ()=> go(cur-1);
+  document.getElementById('nx').onclick = ()=> go(cur+1);
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); go(cur+1); }
+    if(e.key==='ArrowLeft'             ){ e.preventDefault(); go(cur-1); }
+    if(e.key==='Home') go(0);
+    if(e.key==='End')  go(n-1);
+  });
+  scaler.addEventListener('click', ()=> go(cur+1));
+})();
+</script>
+</body>
+</html>
