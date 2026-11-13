@@ -357,14 +357,24 @@ function fill(d){
 }
 
 /* ---- 임시 저장 (이 기기) ---- */
-const key = () => 'rec-draft-' + ($('rid').value.trim().toUpperCase() || 'new');
+let loadedId = '';   // 불러오기가 끝난 접수번호 — 이 번호일 때만 임시 저장
 function saveLocal(){
-  try { localStorage.setItem(key(), JSON.stringify(collect())); } catch(e){}
+  const id = $('rid').value.trim().toUpperCase();
+  if (!id || id !== loadedId) return;
+  try { localStorage.setItem('rec-draft-' + id, JSON.stringify(collect())); } catch(e){}
 }
 function readLocal(id){
   try { return JSON.parse(localStorage.getItem('rec-draft-' + id) || 'null'); } catch(e){ return null; }
 }
-let t; document.addEventListener('input', () => { clearTimeout(t); t = setTimeout(saveLocal, 600); });
+// 학생이 실제로 작성한 내용이 있는 임시본인지
+function hasContent(d){
+  return !!d && !!(d.students || d.summary ||
+    (d.items || []).some(i => i.decision || i.spec || i.oem || i.alt || i.price || i.labor || i.source || i.note));
+}
+let t; document.addEventListener('input', e => {
+  if (['pick','rid','hideDone'].includes(e.target.id)) return;
+  clearTimeout(t); t = setTimeout(saveLocal, 600);
+});
 
 /* ---- 불러오기 ---- */
 function msg(el, text, ok){ el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); el.style.display = 'block'; }
@@ -426,32 +436,42 @@ async function loadRec(){
   const id = $('rid').value.trim().toUpperCase();
   $('rid').value = id;
   if (!id) return msg($('loadMsg'), '접수번호를 입력해 주세요.');
+  clearTimeout(t); loadedId = '';
   if (SCRIPT_URL.startsWith('PASTE')){
     const local = readLocal(id);
-    if (local){ fill(local); return msg($('loadMsg'), '이 기기에 임시 저장된 내용을 불러왔어요.', true); }
+    loadedId = id;
+    if (hasContent(local)){ fill(local); return msg($('loadMsg'), '이 기기에 임시 저장된 내용을 불러왔어요.', true); }
     return msg($('loadMsg'), '저장 주소가 설정되지 않아 직접 입력해야 해요. (관리자: SCRIPT_URL 설정)');
   }
   const btn = $('loadBtn'); btn.disabled = true; btn.textContent = '불러오는 중…';
+  $('loadMsg').style.display = 'none';
   try {
     const res = await fetch(SCRIPT_URL + '?id=' + encodeURIComponent(id));
     const data = await res.json();
     if (!data.ok) throw new Error('none');
-    if (data.request) showRequest(data.request);
+    if ($('rid').value.trim().toUpperCase() !== id) return;   // 그 사이 다른 건을 고른 경우
+    const r = data.request;
+    if (r) showRequest(r);
+    const fromReq = r ? { maker:r.maker, model:r.model, year:r.year, fuel:r.fuel, trim:r.trim,
+                          km: r.km ? Number(r.km).toLocaleString('ko-KR') : '', vin:r.vin } : {};
     const local = readLocal(id);
+    let d, text;
     if (data.rec){
-      const useLocal = !REVIEW && local && local.savedAt > (data.rec.savedAt || '');
-      fill(useLocal ? local : data.rec);
-      msg($('loadMsg'), useLocal ? '제출본보다 최신인 임시 저장본을 불러왔어요.' : '제출된 추천서를 불러왔어요.', true);
-    } else if (local && local.items && local.items.length){
-      fill(local);
-      msg($('loadMsg'), '이 기기에 임시 저장된 내용을 불러왔어요.', true);
+      const useLocal = !REVIEW && hasContent(local) && local.savedAt > (data.rec.savedAt || '');
+      d = useLocal ? local : data.rec;
+      text = useLocal ? '제출본보다 최신인 임시 저장본을 불러왔어요.' : '제출된 추천서를 불러왔어요.';
+    } else if (hasContent(local)){
+      d = local; text = '이 기기에 임시 저장된 내용을 불러왔어요.';
     } else {
-      const r = data.request;
-      fill({ vehicle: { maker:r.maker, model:r.model, year:r.year, fuel:r.fuel, trim:r.trim,
-                        km: r.km ? Number(r.km).toLocaleString('ko-KR') : '', vin:r.vin },
-             items: itemsFromRequest(r) });
-      msg($('loadMsg'), '차량 정보와 요청 항목을 불러왔어요.', true);
+      d = { vehicle: fromReq, items: r ? itemsFromRequest(r) : [] };
+      text = '차량 정보와 요청 항목을 불러왔어요.';
     }
+    // 차량 정보는 비어 있는 칸만 선생님 신청 내용으로 채움
+    d.vehicle = Object.assign({}, fromReq, Object.fromEntries(Object.entries(d.vehicle || {}).filter(([, v]) => v)));
+    if (!d.items || !d.items.length) d.items = r ? itemsFromRequest(r) : [{}];
+    fill(d);
+    loadedId = id;
+    msg($('loadMsg'), text, true);
   } catch(e){
     msg($('loadMsg'), '해당 접수번호를 찾지 못했어요. 번호를 다시 확인해 주세요.');
   } finally { btn.disabled = false; btn.textContent = '불러오기'; $('pick').value = LIST.some(r => r.id === id) ? id : ''; }
