@@ -350,6 +350,9 @@
 <datalist id="filterList">
   <option value="보쉬"><option value="MANN"><option value="MAHLE"><option value="K&amp;N"><option value="HENGST"><option value="기타">
 </datalist>
+<datalist id="wiperList">
+  <option value="보쉬"><option value="덴소"><option value="발레오"><option value="불스원"><option value="캐치온"><option value="3M"><option value="기타">
+</datalist>
 <datalist id="rotorList">
   <option value="브렘보"><option value="ATE"><option value="짐머만(Zimmermann)"><option value="보쉬"><option value="TRW"><option value="기타">
 </datalist>
@@ -372,7 +375,7 @@ const HINTS = {
   '브레이크 패드':    ['', '앞·뒤를 구분하고, 순정 품번을 먼저 찾은 뒤 같은 규격의 AM 제품과 비교하기. 특징에는 재질(세라믹·저금속)과 소음·분진·제동력 차이를 적고, 실제 잔량은 정비소 점검이 필요하다고 안내'],
   '브레이크액':       ['', '취급설명서·보조 탱크 뚜껑에 적힌 DOT 규격을 확인하기. DOT 3·4·5.1은 같은 글리콜계라 상위 규격은 써도 되지만, DOT 5(실리콘계)는 섞으면 안 됨. 교체 주기는 보통 2년 전후지만 차종별 취급설명서가 우선'],
   '타이어':           ['', '폭·편평비·인치는 운전석 문 안쪽 스티커나 타이어 옆면에서 확인. 하중지수·속도기호(예: 95W)도 기존 타이어 이상인지 보고, 제조 주차(DOT 뒤 4자리)도 확인'],
-  '와이퍼':           ['예: 운전석 650mm / 조수석 400mm / 후면 300mm', '길이와 와이퍼 암 결합 방식(후크 등) 확인'],
+  '와이퍼':           ['', '운전석·조수석 길이는 취급설명서나 지금 달린 블레이드 옆면 표기에서 확인. 운전석이 보통 더 길어요. 결합 방식(어댑터)이 맞아야 끼울 수 있어요'],
   '에어컨(실내) 필터': ['예: 순정 품번 또는 호환 규격', '등급(일반·활성탄·고성능)에 따라 가격 차이가 큼'],
   '엔진 에어필터':     ['', '엔진 형식에 따라 규격이 달라지니 연식·엔진을 확인하고, 순정 품번을 찾은 뒤 같은 규격의 AM 제품과 가격 비교'],
   '브레이크 디스크(로터)': ['', '로터 최소 두께(디스크 옆면 MIN TH 각인)와 편마모·떨림 여부를 보고 교체할지 연마할지 판단하기'],
@@ -399,6 +402,7 @@ const kindOf = name => /엔진\s*오일/.test(name) ? 'oil'
   : /로터|브레이크\s*디스크/.test(name) ? 'rotor'
   : /브레이크\s*(액|오일|플루이드)/.test(name) ? 'fluid'
   : /타이어/.test(name) ? 'tire'
+  : /와이퍼/.test(name) ? 'wiper'
   : /브레이크\s*패드/.test(name) ? 'pad'
   : (/에어\s*(필터|클리너)/.test(name) && !/에어컨|실내/.test(name)) ? 'filter' : 'gen';
 const digits = s => String(s ?? '').replace(/[^\d]/g, '');
@@ -428,6 +432,8 @@ const BLK = {
               oem:'순정 품번 (예: 26300-35505)', am:'제조사·제품명', feat:'고효율 여과지' },
   afilters: { title:'에어클리너', hint:'오일 교체 때 함께 교체 — 순정과 AM 비교', list:'filterList',
               oem:'순정 품번', am:'제조사·제품명', feat:'세척형 / 일반형' },
+  wipers:   { title:'와이퍼 블레이드', hint:'순정과 AM 비교 (가격은 운전석+조수석 1세트 기준)', list:'wiperList',
+              oem:'순정 품번 또는 제품명', am:'제조사·제품명 (예: 보쉬 에어로트윈)', feat:'플랫형·하이브리드형, 실리콘 코팅' },
   rotors:   { title:'로터 제품 비교', hint:'순정과 AM 비교', list:'rotorList',
               oem:'순정 품번', am:'제조사·제품명', feat:'통풍형·슬롯형, 코팅' },
   pads:     { title:'브레이크 패드', hint:'소음·분진·제동력 같은 특징과 가격 비교', list:'padList',
@@ -567,6 +573,30 @@ function readTire(card){
   };
 }
 
+/* ---- 와이퍼 ---- */
+const W_LEN = Array.from({length:19}, (_, i) => 300 + i * 25);       // 300~750mm
+const wLabel = mm => `${mm}mm (${Math.round(mm / 25.4)}인치)`;
+const W_ADAPT = ['U훅', '푸시버튼', '사이드핀', '탑락', '베이어넷', '핀치탭', '기타·모름'];
+function wSel(cls, val, ph){
+  return `<select class="${cls}"><option value="">${ph}</option>` +
+    W_LEN.map(mm => `<option value="${mm}"${String(mm) === String(val) ? ' selected' : ''}>${wLabel(mm)}</option>`).join('') + '</select>';
+}
+function wiperBlock(d = {}){
+  const w = document.createElement('div');
+  const z = d.wsize || {};
+  const top = document.createElement('div'); top.className = 'topspec';
+  top.innerHTML =
+    `<div class="f"><label class="t">운전석<span class="req">*</span></label>${wSel('w-drv', z.drv, '길이 선택')}</div>` +
+    `<div class="f"><label class="t">조수석<span class="req">*</span></label>${wSel('w-pas', z.pas, '길이 선택')}</div>` +
+    `<div class="f"><label class="t">후면<span class="opt">있으면</span></label>${wSel('w-rear', z.rear, '없음')}</div>`;
+  const ad = document.createElement('div'); ad.className = 'f';
+  ad.innerHTML = '<label class="t">결합 방식(어댑터)<span class="opt">선택</span></label>' +
+    `<select class="o-wadapter">${opts(W_ADAPT, d.wadapter, '선택')}</select>` +
+    '<div class="hint">와이퍼 암 끝이 갈고리 모양이면 U훅(국산차 대부분), 버튼을 눌러 빼면 푸시버튼, 옆에 핀이 꽂혀 있으면 사이드핀이에요. AM 제품은 여러 어댑터가 같이 들어 있는 경우가 많아요.</div>';
+  w.append(top, ad, rowsBlock('wipers', d.wipers));
+  return w;
+}
+
 let rotorSeq = 0;
 function rotorBlock(d = {}){
   const r = d.rotor || {}, grp = 'rot' + (++rotorSeq);
@@ -614,6 +644,12 @@ function readExt(card){
   if (kind === 'pad' || kind === 'rotor') Object.assign(out, readRotor(card));
   if (kind === 'fluid'){ out.dot = v_(card, 'dot'); out.frange = v_(card, 'frange'); }
   if (kind === 'tire') Object.assign(out, readTire(card));
+  if (kind === 'wiper'){
+    const g = c => ((card.querySelector('.' + c) || {}).value || '');
+    out.wsize = { drv: g('w-drv'), pas: g('w-pas'), rear: g('w-rear') };
+    out.wadapter = v_(card, 'wadapter');
+    out.wipers = readRows(card, 'wipers');
+  }
   return out;
 }
 function buildExt(card, d = {}){
@@ -645,6 +681,8 @@ function buildExt(card, d = {}){
     ext.append(top, rowsBlock('pads', d.pads), rotorBlock(d));
   } else if (kind === 'rotor'){
     ext.append(rotorBlock(d));
+  } else if (kind === 'wiper'){
+    ext.append(wiperBlock(d));
   } else if (kind === 'tire'){
     if (!d.tsize && d.spec) d = Object.assign({}, d, { tsize: parseTire(d.spec) });
     ext.append(tireBlock(d));
@@ -727,7 +765,7 @@ function hasContent(d){
     (d.items || []).some(i => i.decision || i.spec || i.oem || i.alt || i.price || i.labor || i.source || i.note ||
       (i.oil && (i.oil.visc || i.oil.cap)) || i.pos || (i.oils || []).length || (i.ofilters || []).length ||
       (i.afilters || []).length || (i.pads || []).length || (i.rotor && i.rotor.act) || (i.rotors || []).length || i.dot || i.frange ||
-      (i.tires || []).length || i.tpos || (i.tsize && i.tsize.w && i.decision)));
+      (i.tires || []).length || i.tpos || (i.wipers || []).length || (i.wsize && (i.wsize.drv || i.wsize.pas)) || (i.tsize && i.tsize.w && i.decision)));
 }
 let t; document.addEventListener('input', e => {
   if (['pick','rid','hideDone'].includes(e.target.id)) return;
@@ -859,6 +897,11 @@ function validate(d){
       if (!it.pos) return `${n}(${it.item})의 교체 위치(앞/뒤)를 골라 주세요.`;
       if (!(it.pads || []).some(o => o.name)) return `${n}(${it.item})에 브레이크 패드 제품을 하나 이상 적어 주세요.`;
       if (it.rotor && it.rotor.act === '교체' && !(it.rotors || []).some(o => o.name)) return `${n}(${it.item})에서 로터를 교체로 골랐으면 로터 제품을 하나 이상 적어 주세요.`;
+    } else if (k === 'wiper'){
+      const z = it.wsize || {};
+      if (!z.drv) return `${n}(${it.item})의 운전석 와이퍼 길이를 골라 주세요.`;
+      if (!z.pas) return `${n}(${it.item})의 조수석 와이퍼 길이를 골라 주세요.`;
+      if (!(it.wipers || []).some(o => o.name)) return `${n}(${it.item})에 와이퍼 제품을 하나 이상 적어 주세요.`;
     } else if (k === 'tire'){
       const t = it.tsize || {};
       if (!t.w || !t.a || !t.r) return `${n}(${it.item})의 타이어 규격(폭·편평비·인치)을 모두 골라 주세요.`;
@@ -941,6 +984,13 @@ function renderDoc(d){
       : k === 'filter' ? cmp('에어클리너', it.afilters)
       : k === 'pad' ? `<div class="sub"><b>교체 위치</b>${dash(it.pos)}</div>` + cmp('브레이크 패드', it.pads) + rotorDoc(it)
       : k === 'rotor' ? rotorDoc(it)
+      : k === 'wiper' ? (() => {
+          const z = it.wsize || {};
+          const parts = [`<b>운전석</b>${z.drv ? wLabel(z.drv) : '-'}`, `<b>조수석</b>${z.pas ? wLabel(z.pas) : '-'}`];
+          if (z.rear) parts.push(`<b>후면</b>${wLabel(z.rear)}`);
+          if (it.wadapter) parts.push(`<b>결합 방식</b>${esc(it.wadapter)}`);
+          return `<div class="sub">${parts.join(' &nbsp;·&nbsp; ')}</div>` + cmp('와이퍼 블레이드 (1세트 기준)', it.wipers);
+        })()
       : k === 'tire' ? (() => {
           const sq = it.square !== undefined ? it.square : (!it.trear || sameSize(it.tsize, it.trear));
           const size = sq ? `${dash(tireStr(it.tsize))} (스퀘어 세팅)`
