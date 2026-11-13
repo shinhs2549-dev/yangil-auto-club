@@ -54,6 +54,13 @@
   .chip input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
   .reveal{display:none;margin-top:14px;padding:14px;border-radius:12px;background:var(--field);border:1px dashed var(--line)}
   .reveal.on{display:block}
+  .reveal + .reveal.on{margin-top:10px}
+  .axle{font-size:12.5px;font-weight:800;margin:6px 0 4px}
+  .tsize{display:grid;grid-template-columns:1fr 16px 1fr 18px 1fr;align-items:center;gap:6px}
+  .tsize .sep{text-align:center;color:var(--sub);font-weight:700}
+  .tsize select:disabled{opacity:.6;cursor:not-allowed}
+  .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);margin:10px 0 2px;cursor:pointer}
+  .chk input{accent-color:var(--accent);width:16px;height:16px}
   .agree{display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
   .agree input{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex:none}
   .agree small{display:block;color:var(--sub);margin-top:4px;font-size:12px}
@@ -171,27 +178,44 @@
     <section class="card">
       <h2><span class="n">3</span>점검·교체 희망 항목<span class="req">*</span></h2>
       <div class="chips" id="items">
-        <label class="chip"><input type="checkbox" name="items" value="엔진오일·오일필터" data-ice><span>엔진오일·필터</span></label>
-        <label class="chip"><input type="checkbox" name="items" value="브레이크"><span>브레이크 (패드·로터)</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="엔진오일·오일필터" data-ice><span>엔진오일·오일필터</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="브레이크" id="brakeChk"><span>브레이크 (패드·로터)</span></label>
         <label class="chip"><input type="checkbox" name="items" value="브레이크액"><span>브레이크액</span></label>
         <label class="chip"><input type="checkbox" name="items" value="타이어" id="tireChk"><span>타이어</span></label>
         <label class="chip"><input type="checkbox" name="items" value="와이퍼"><span>와이퍼</span></label>
-        <label class="chip"><input type="checkbox" name="items" value="에어컨(실내) 필터"><span>에어컨 필터</span></label>
-        <label class="chip"><input type="checkbox" name="items" value="엔진 에어필터" data-ice><span>엔진 에어필터</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="에어컨(실내) 필터"><span>에어컨(실내) 필터</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="에어클리너" data-ice><span>에어클리너</span></label>
         <label class="chip"><input type="checkbox" name="items" value="배터리"><span>배터리</span></label>
         <label class="chip"><input type="checkbox" name="items" value="기타" id="etcChk"><span>기타</span></label>
       </div>
-      <div class="hint" id="evHint" style="display:none">전기차는 엔진오일과 엔진 에어필터 항목이 없어요.</div>
+      <div class="hint">엔진오일을 고르면 오일필터와 에어클리너(엔진 공기 필터)도 함께 조사해요.</div>
+      <div class="hint" id="evHint" style="display:none">전기차는 엔진오일과 에어클리너 항목이 없어요.</div>
+
+      <div class="reveal" id="brakeBox">
+        <div class="f" style="margin-bottom:0">
+          <label class="t" for="brakePos">브레이크 교체 희망 위치<span class="opt">선택</span></label>
+          <select id="brakePos"><option value="">잘 모름</option><option>앞</option><option>뒤</option><option>앞·뒤</option></select>
+          <div class="hint">소리나 떨림이 어느 쪽에서 나는지 알면 골라 주세요. 패드와 로터(디스크)를 함께 살펴봐요.</div>
+        </div>
+      </div>
 
       <div class="reveal" id="tireBox">
         <div class="f">
-          <label class="t" for="tireSize">타이어 규격<span class="opt">선택</span></label>
-          <input type="text" id="tireSize" name="tireSize" placeholder="예: 235/55R19">
-          <div class="hint">타이어 옆면의 숫자, 또는 운전석 문 안쪽 스티커에 적혀 있어요. 모르시면 비워 두세요.</div>
+          <label class="t">타이어 규격<span class="opt">선택 · 모르면 비워 두세요</span></label>
+          <div class="axle">앞 타이어</div>
+          <div class="tsize" id="tFront"></div>
+          <label class="chk"><input type="checkbox" id="tSquare" checked> 스퀘어 세팅 (앞뒤 같은 규격 — 뒤 타이어 자동 입력)</label>
+          <div class="axle">뒤 타이어</div>
+          <div class="tsize" id="tRear"></div>
+          <div class="hint">운전석 문 안쪽 스티커나 타이어 옆면의 숫자(예: 235/55 R19)를 보고 골라 주세요.</div>
+        </div>
+        <div class="f">
+          <label class="t" for="tirePos">교체 희망 위치<span class="opt">선택</span></label>
+          <select id="tirePos"><option value="">잘 모름</option><option>앞 (2개)</option><option>뒤 (2개)</option><option>앞·뒤 (4개)</option></select>
         </div>
         <div class="f" style="margin-bottom:0">
           <label class="t" for="tireNote">타이어 관련 메모<span class="opt">선택</span></label>
-          <input type="text" id="tireNote" name="tireNote" placeholder="예: 4년 사용, 소음 큼, 앞 2짝만 교체 희망">
+          <input type="text" id="tireNote" name="tireNote" placeholder="예: 4년 사용, 소음 큼">
         </div>
       </div>
 
@@ -280,9 +304,39 @@ $('fuel').addEventListener('change', e => {
   $('evHint').style.display = ev ? 'block' : 'none';
 });
 
-// 타이어·기타 입력칸 열기
+// 타이어 규격 드롭다운 (추천서와 같은 범위)
+const T_W = Array.from({length:20}, (_, i) => 145 + i * 10);
+const T_A = Array.from({length:12}, (_, i) => 25 + i * 5);
+const T_R = Array.from({length:10}, (_, i) => 13 + i);
+const sel = (cls, arr, ph) => `<select class="${cls}"><option value="">${ph}</option>${arr.map(v => `<option>${v}</option>`).join('')}</select>`;
+['tFront','tRear'].forEach(id => $(id).innerHTML =
+  sel('t-w', T_W, '폭') + '<span class="sep">/</span>' + sel('t-a', T_A, '편평비') + '<span class="sep">R</span>' + sel('t-r', T_R, '인치'));
+function syncRear(){
+  const sq = $('tSquare').checked;
+  ['t-w','t-a','t-r'].forEach(c => {
+    const r = $('tRear').querySelector('.' + c);
+    r.disabled = sq;
+    if (sq) r.value = $('tFront').querySelector('.' + c).value;
+  });
+}
+$('tSquare').addEventListener('change', syncRear);
+$('tFront').addEventListener('change', syncRear);
+syncRear();
+const sizeOf = id => {
+  const g = c => $(id).querySelector('.' + c).value;
+  return g('t-w') && g('t-a') && g('t-r') ? `${g('t-w')}/${g('t-a')}R${g('t-r')}` : '';
+};
+
+// 브레이크·타이어·기타 입력칸 열기
+$('brakeChk').addEventListener('change', e => $('brakeBox').classList.toggle('on', e.target.checked));
 $('tireChk').addEventListener('change', e => $('tireBox').classList.toggle('on', e.target.checked));
 $('etcChk').addEventListener('change', e => $('etcBox').classList.toggle('on', e.target.checked));
+
+function tireSizeText(){
+  const f = sizeOf('tFront'), r = sizeOf('tRear');
+  if (!f) return '';
+  return $('tSquare').checked || !r || r === f ? f : `앞 ${f} / 뒤 ${r}`;
+}
 
 function makeId(){
   const d = new Date();
@@ -321,9 +375,10 @@ form.addEventListener('submit', async e => {
     plate: v('plate').replace(/\s+/g, ' '),
     maker: v('maker'), model: v('model'), year: v('year'), fuel: v('fuel'),
     trim: v('trim'), km: v('km').replace(/,/g,''), vin: v('vin'),
-    items: items.map(i => i === '기타' ? `기타(${v('etc')})` : i).join(', '),
-    tireSize: items.includes('타이어') ? v('tireSize') : '',
-    tireNote: items.includes('타이어') ? v('tireNote') : '',
+    items: items.map(i => i === '기타' ? `기타(${v('etc')})`
+                        : (i === '브레이크' && v('brakePos')) ? `브레이크(${v('brakePos')})` : i).join(', '),
+    tireSize: items.includes('타이어') ? tireSizeText() : '',
+    tireNote: items.includes('타이어') ? [v('tirePos') ? `교체 희망: ${v('tirePos')}` : '', v('tireNote')].filter(Boolean).join(' · ') : '',
     history: v('history'), memo: v('memo')
   };
 
@@ -353,7 +408,8 @@ form.addEventListener('submit', async e => {
 
 $('again').addEventListener('click', () => {
   form.reset();
-  ['tireBox','etcBox'].forEach(id => $(id).classList.remove('on'));
+  ['brakeBox','tireBox','etcBox'].forEach(id => $(id).classList.remove('on'));
+  $('tSquare').checked = true; syncRear();
   document.querySelectorAll('[data-ice]').forEach(c => c.disabled = false);
   $('evHint').style.display = 'none';
   $('done').style.display = 'none';

@@ -815,7 +815,15 @@ function itemsFromRequest(r){
   return list.filter(s => !(hasOil && kindOf(s) === 'filter')).map(s => {
     const m = s.match(/^기타\((.*)\)$/);
     const it = { item: m ? m[1] : s };
-    if (s === '타이어' && r.tireSize) it.tsize = parseTire(r.tireSize);
+    const bp = s.match(/^브레이크\s*\((앞|뒤|앞·뒤)\)$/);          // 선생님이 고른 브레이크 위치
+    if (bp){ it.item = '브레이크'; it.pos = bp[1]; }
+    if (s === '타이어'){
+      const sizes = [...String(r.tireSize || '').matchAll(/(\d{3})\s*\/\s*(\d{2})\s*Z?R?F?\s*(\d{2})/gi)].map(x => ({ w: x[1], a: x[2], r: x[3] }));
+      if (sizes[0]) it.tsize = sizes[0];
+      if (sizes[1] && !sameSize(sizes[0], sizes[1])){ it.trear = sizes[1]; it.square = false; }
+      const tp = String(r.tireNote || '').match(/교체 희망:\s*(앞 \(2개\)|뒤 \(2개\)|앞·뒤 \(4개\))/);
+      if (tp) it.tpos = tp[1];
+    }
     return it;
   });
 }
