@@ -74,6 +74,36 @@
   .seg span{display:block;text-align:center;font-size:13px;padding:10px 4px;border-radius:9px;background:var(--chip);border:1.5px solid transparent;user-select:none}
   .seg input:checked + span{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
   .seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+  /* 비교표 */
+  .blk{margin:2px 0 14px;padding:12px;border-radius:12px;background:var(--field);border:1px solid var(--line)}
+  .blk-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin-bottom:8px}
+  .blk-h b{font-size:14px}
+  .blk-h span{font-size:12px;color:var(--sub)}
+  .rows{display:flex;flex-direction:column;gap:6px}
+  .r,.rh{display:grid;gap:6px;align-items:center}
+  .rh{font-size:11.5px;font-weight:700;color:var(--sub);padding:0 2px}
+  .r-oil,.h-oil{grid-template-columns:1.3fr 1.2fr 124px 32px}
+  .r-part,.h-part{grid-template-columns:84px 1fr 124px 32px}
+  .r input[type=text],.r select{padding:9px 10px;font-size:14px;background:var(--card)}
+  .pw{position:relative;display:block}
+  .pw input[type=text]{padding-right:28px;text-align:right}
+  .pw i{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-size:12px;color:var(--sub);pointer-events:none}
+  .rm{border:0;background:none;color:var(--sub);font-size:20px;line-height:1;cursor:pointer;width:32px;height:38px;border-radius:8px}
+  .rm:hover{color:var(--err);background:var(--chip)}
+  .addrow{margin-top:8px;font:inherit;font-size:13px;font-weight:700;color:var(--accent);background:none;border:1.5px dashed var(--line);border-radius:9px;padding:8px;width:100%;cursor:pointer}
+  .addrow:hover{border-color:var(--accent)}
+  .oilspec{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px}
+  @media (max-width:560px){
+    .oilspec{grid-template-columns:1fr 1fr}
+    .oilspec .f:last-child{grid-column:1 / -1}
+    .r-oil{grid-template-columns:1fr 112px 28px;grid-template-areas:"n n x" "f p x"}
+    .r-oil .x-name{grid-area:n} .r-oil .x-feat{grid-area:f} .r-oil .pw{grid-area:p} .r-oil .rm{grid-area:x}
+    .r-part{grid-template-columns:76px 1fr 28px;grid-template-areas:"k m x" "k p x"}
+    .r-part .x-kind{grid-area:k;align-self:stretch} .r-part .x-maker{grid-area:m} .r-part .pw{grid-area:p} .r-part .rm{grid-area:x}
+    .r-oil,.r-part{padding-bottom:8px;border-bottom:1px dashed var(--line)}
+    .h-oil,.h-part{display:none}
+    .rm{width:28px}
+  }
   .add{width:100%;font:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:1.5px dashed var(--line);background:transparent;color:var(--sub);cursor:pointer}
   .add:hover{border-color:var(--accent);color:var(--accent)}
   .review{display:none;border:2px solid var(--accent)}
@@ -103,6 +133,15 @@
   .doc .it dl{display:grid;grid-template-columns:90px 1fr;margin:0;padding:8px 12px;gap:3px 10px}
   .doc .it dt{color:#6b7280;font-size:12px}
   .doc .it dd{margin:0}
+  .doc .sub{padding:9px 12px 0;font-size:12.5px}
+  .doc .sub b{margin-right:4px}
+  .doc table.cmp{width:calc(100% - 24px);margin:10px 12px 2px;border-collapse:collapse;font-size:12px}
+  .doc table.cmp caption{text-align:left;font-weight:700;font-size:12.5px;padding:0 0 4px}
+  .doc table.cmp th,.doc table.cmp td{border:1px solid #e5e7eb;padding:5px 8px;text-align:left}
+  .doc table.cmp th{background:#f9fafb;font-weight:700;color:#4b5563}
+  .doc table.cmp .p{text-align:right;white-space:nowrap;width:24%}
+  .doc table.cmp .k{width:13%;white-space:nowrap}
+  .doc .low{display:inline-block;font-size:10.5px;font-weight:700;color:#15803d;background:#dcfce7;border-radius:999px;padding:0 6px;margin-right:4px}
   .doc .box{border:1px solid #d1d5db;border-radius:8px;padding:10px 12px;white-space:pre-wrap;min-height:40px}
   .doc .warn{margin-top:20px;font-size:11.5px;color:#4b5563;background:#f9fafb;border-radius:8px;padding:10px 12px}
   .doc .sign{display:flex;justify-content:flex-end;gap:28px;margin-top:22px;font-size:12.5px}
@@ -244,29 +283,30 @@
         <label><input type="radio" value="아직 교체 불필요"><span>아직 불필요</span></label>
       </div>
     </div>
-    <div class="f">
-      <label class="t">규격·사양<span class="req">*</span></label>
-      <input type="text" class="k-spec">
-    </div>
-    <div class="row">
+    <div class="ext"></div>
+    <div class="gen">
       <div class="f">
-        <label class="t">순정 품번<span class="opt">선택</span></label>
-        <input type="text" class="k-oem" placeholder="예: 26300-35505">
+        <label class="t">규격·사양<span class="req">*</span></label>
+        <input type="text" class="k-spec">
       </div>
-      <div class="f">
-        <label class="t">호환·대체 부품<span class="opt">선택</span></label>
-        <input type="text" class="k-alt" placeholder="규격이 맞는 다른 제품">
+      <div class="row">
+        <div class="f">
+          <label class="t">순정 품번<span class="opt">선택</span></label>
+          <input type="text" class="k-oem" placeholder="예: 26300-35505">
+        </div>
+        <div class="f">
+          <label class="t">호환·대체 부품<span class="opt">선택</span></label>
+          <input type="text" class="k-alt" placeholder="규격이 맞는 다른 제품">
+        </div>
       </div>
-    </div>
-    <div class="row">
       <div class="f">
         <label class="t">예상 부품 가격</label>
         <input type="text" class="k-price" placeholder="예: 4~6만원">
       </div>
-      <div class="f">
-        <label class="t">공임 참고</label>
-        <input type="text" class="k-labor" placeholder="예: 정비소 2~3만원 / 직접 교체 가능">
-      </div>
+    </div>
+    <div class="f">
+      <label class="t">공임 참고</label>
+      <input type="text" class="k-labor" placeholder="예: 정비소 2~3만원 / 직접 교체 가능">
     </div>
     <div class="f">
       <label class="t">근거 출처<span class="req">*</span></label>
@@ -284,6 +324,13 @@
   <option value="타이어"><option value="와이퍼"><option value="에어컨(실내) 필터">
   <option value="엔진 에어필터"><option value="배터리">
 </datalist>
+<datalist id="oilList">
+  <option value="킥스(GS칼텍스)"><option value="지크(SK엔무브)"><option value="S-OIL 세븐">
+  <option value="모빌1"><option value="쉘 힐릭스"><option value="캐스트롤"><option value="리퀴몰리"><option value="모튤"><option value="토탈에너지스">
+</datalist>
+<datalist id="makerList">
+  <option value="현대모비스(순정)"><option value="보쉬"><option value="MANN"><option value="MAHLE"><option value="K&amp;N">
+</datalist>
 
 <script>
 /* ===== 설정: index.html과 같은 웹 앱 URL을 붙여넣으세요 ===== */
@@ -295,13 +342,13 @@ const $ = id => document.getElementById(id);
 const CAR = ['plate','maker','model','year','fuel','trim','km','vin'];
 
 const HINTS = {
-  '엔진오일·오일필터': ['예: 0W-20 / API SP / 오일 4.2L (필터 포함)', '취급설명서의 정비 제원표에서 점도·규격·용량을 확인하고, 오일필터는 순정 품번으로 찾기'],
+  '엔진오일·오일필터': ['', '취급설명서 정비 제원표에서 점도·용량·규격을 먼저 확인하고, 그 규격을 만족하는 오일끼리 가격과 성능을 비교하기. 필터는 순정 품번을 찾은 뒤 같은 규격의 AM(애프터마켓) 제품과 비교'],
   '브레이크 패드':    ['예: 앞 패드 / 순정 품번 기준', '앞·뒤를 구분하고, 실제 잔량은 정비소 점검이 필요하다고 적기'],
   '브레이크액':       ['예: DOT4 / 약 1L', '취급설명서의 규격(DOT)과 교체 주기 확인'],
   '타이어':           ['예: 225/45R18 95W', '폭·편평비·림 지름에 하중지수·속도기호까지 일치해야 함. 제조 주차(DOT 4자리)도 확인'],
   '와이퍼':           ['예: 운전석 650mm / 조수석 400mm / 후면 300mm', '길이와 와이퍼 암 결합 방식(후크 등) 확인'],
   '에어컨(실내) 필터': ['예: 순정 품번 또는 호환 규격', '등급(일반·활성탄·고성능)에 따라 가격 차이가 큼'],
-  '엔진 에어필터':     ['예: 순정 품번 또는 호환 규격', '엔진 형식에 따라 규격이 달라지니 연식·엔진 확인'],
+  '엔진 에어필터':     ['', '엔진 형식에 따라 규격이 달라지니 연식·엔진을 확인하고, 순정 품번을 찾은 뒤 같은 규격의 AM 제품과 가격 비교'],
   '배터리':           ['예: AGM 70Ah / 규격명', 'ISG(오토스탑) 차량은 AGM·EFB 여부 확인 필수']
 };
 
@@ -314,10 +361,112 @@ function renumber(){
 function applyHint(card){
   const name = card.querySelector('.k-item').value.trim();
   const h = HINTS[name] || ['규격·사양', ''];
-  card.querySelector('.k-spec').placeholder = h[0];
+  card.querySelector('.k-spec').placeholder = h[0] || '규격·사양';
   const tip = card.querySelector('.tip');
   tip.textContent = h[1] ? '조사 팁 · ' + h[1] : '';
   tip.style.display = h[1] ? 'block' : 'none';
+}
+
+/* ---- 항목 종류: 엔진오일(oil) / 엔진 에어필터(filter) / 일반(gen) ---- */
+const kindOf = name => /엔진\s*오일/.test(name) ? 'oil'
+  : (/에어\s*(필터|클리너)/.test(name) && !/에어컨|실내/.test(name)) ? 'filter' : 'gen';
+const digits = s => String(s ?? '').replace(/[^\d]/g, '');
+const won = s => digits(s) ? Number(digits(s)).toLocaleString('ko-KR') + '원' : '';
+
+function priceInput(v){
+  const w = document.createElement('span'); w.className = 'pw';
+  w.innerHTML = '<input type="text" class="x-price" inputmode="numeric" placeholder="가격"><i>원</i>';
+  const inp = w.firstChild;
+  inp.value = digits(v) ? Number(digits(v)).toLocaleString('ko-KR') : '';
+  inp.addEventListener('input', () => {
+    const d = digits(inp.value).slice(0, 9);
+    inp.value = d ? Number(d).toLocaleString('ko-KR') : '';
+  });
+  return w;
+}
+function rmBtn(row){
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'rm'; b.textContent = '×'; b.setAttribute('aria-label', '이 줄 삭제');
+  b.addEventListener('click', () => { row.remove(); saveLocal(); });
+  return b;
+}
+function oilRow(d = {}){
+  const r = document.createElement('div'); r.className = 'r r-oil';
+  r.innerHTML = '<input type="text" class="x-name" list="oilList" placeholder="오일명 (예: 킥스 PAO 1)">' +
+                '<input type="text" class="x-feat" placeholder="특징 (예: 100% 합성, API SP)">';
+  r.querySelector('.x-name').value = d.name || '';
+  r.querySelector('.x-feat').value = d.feat || '';
+  r.append(priceInput(d.price), rmBtn(r));
+  return r;
+}
+function partRow(d = {}){
+  const r = document.createElement('div'); r.className = 'r r-part';
+  r.innerHTML = '<select class="x-kind"><option>순정</option><option>AM</option></select>' +
+                '<input type="text" class="x-maker" list="makerList" placeholder="제조사·제품명 (품번)">';
+  r.querySelector('.x-kind').value = d.kind === 'AM' ? 'AM' : '순정';
+  r.querySelector('.x-maker').value = d.maker || '';
+  r.append(priceInput(d.price), rmBtn(r));
+  return r;
+}
+function rowsBlock(key, title, hint, rows){
+  const oil = key === 'oils';
+  const b = document.createElement('div'); b.className = 'blk'; b.dataset.key = key;
+  b.innerHTML = `<div class="blk-h"><b>${title}</b><span>${hint}</span></div>` +
+    (oil ? '<div class="rh h-oil"><span>오일명</span><span>특징</span><span>가격</span><span></span></div>'
+         : '<div class="rh h-part"><span>구분</span><span>제조사·제품명</span><span>가격</span><span></span></div>') +
+    '<div class="rows"></div><button type="button" class="addrow">+ 줄 추가</button>';
+  const box = b.querySelector('.rows'), make = oil ? oilRow : partRow;
+  const start = rows && rows.length ? rows : (oil ? [{}, {}] : [{ kind:'순정' }, { kind:'AM' }]);
+  start.forEach(x => box.appendChild(make(x)));
+  b.querySelector('.addrow').addEventListener('click', () => {
+    const r = make(oil ? {} : { kind:'AM' }); box.appendChild(r);
+    r.querySelector('input[type=text]').focus();
+  });
+  return b;
+}
+function readRows(card, key){
+  const b = card.querySelector(`.blk[data-key="${key}"]`);
+  if (!b) return [];
+  return [...b.querySelectorAll('.r')].map(r => key === 'oils'
+    ? { name: r.querySelector('.x-name').value.trim(), feat: r.querySelector('.x-feat').value.trim(), price: digits(r.querySelector('.x-price').value) }
+    : { kind: r.querySelector('.x-kind').value, maker: r.querySelector('.x-maker').value.trim(), price: digits(r.querySelector('.x-price').value) }
+  ).filter(x => (x.name || x.maker || x.feat || x.price));
+}
+function readExt(card){
+  const kind = card.dataset.kind, out = {};
+  if (kind === 'oil'){
+    const v = c => (card.querySelector('.o-' + c) || {}).value || '';
+    out.oil = { visc: v('visc').trim(), cap: v('cap').trim(), std: v('std').trim() };
+    out.oils = readRows(card, 'oils');
+    out.ofilters = readRows(card, 'ofilters');
+  }
+  if (kind === 'oil' || kind === 'filter') out.afilters = readRows(card, 'afilters');
+  return out;
+}
+function buildExt(card, d = {}){
+  const kind = kindOf(card.querySelector('.k-item').value);
+  card.dataset.kind = kind;
+  card.querySelector('.gen').style.display = kind === 'gen' ? '' : 'none';
+  const ext = card.querySelector('.ext');
+  ext.innerHTML = '';
+  if (kind === 'oil'){
+    const o = d.oil || {};
+    const spec = document.createElement('div');
+    spec.className = 'oilspec';
+    spec.innerHTML =
+      '<div class="f"><label class="t">오일 점도<span class="req">*</span></label><input type="text" class="o-visc" placeholder="예: 0W-20"></div>' +
+      '<div class="f"><label class="t">오일 용량<span class="req">*</span></label><input type="text" class="o-cap" placeholder="예: 4.2L (필터 포함)"></div>' +
+      '<div class="f"><label class="t">요구 규격<span class="opt">선택</span></label><input type="text" class="o-std" placeholder="예: API SP / ACEA C5"></div>';
+    spec.querySelector('.o-visc').value = o.visc || '';
+    spec.querySelector('.o-cap').value = o.cap || '';
+    spec.querySelector('.o-std').value = o.std || '';
+    ext.append(spec,
+      rowsBlock('oils', '추천 엔진오일', '점도·규격이 맞는 제품끼리 가격과 성능 비교', d.oils),
+      rowsBlock('ofilters', '오일필터', '순정과 AM(애프터마켓) 제품 가격 비교', d.ofilters),
+      rowsBlock('afilters', '에어클리너', '오일 교체 때 함께 교체 — 순정과 AM 가격 비교', d.afilters));
+  } else if (kind === 'filter'){
+    ext.append(rowsBlock('afilters', '에어클리너 비교', '순정과 AM(애프터마켓) 제품 가격 비교', d.afilters));
+  }
 }
 
 function addItem(d = {}){
@@ -326,7 +475,11 @@ function addItem(d = {}){
   card.querySelectorAll('input[type=radio]').forEach(r => { r.name = grp; r.checked = r.value === d.decision; });
   const set = (cls, v) => card.querySelector('.k-' + cls).value = v || '';
   ['item','spec','oem','alt','price','labor','source','note'].forEach(k => set(k, d[k]));
-  card.querySelector('.k-item').addEventListener('input', () => applyHint(card));
+  buildExt(card, d);
+  card.querySelector('.k-item').addEventListener('input', () => {
+    applyHint(card);
+    if (kindOf(card.querySelector('.k-item').value) !== card.dataset.kind) buildExt(card, readExt(card));
+  });
   card.querySelector('.del').addEventListener('click', () => {
     if (confirm('이 항목을 삭제할까요?')) { card.remove(); renumber(); saveLocal(); }
   });
@@ -339,8 +492,10 @@ function collect(){
   const items = [...document.querySelectorAll('#items .item')].map(c => {
     const g = k => c.querySelector('.k-' + k).value.trim();
     const dec = c.querySelector('input[type=radio]:checked');
-    return { item:g('item'), decision: dec ? dec.value : '', spec:g('spec'), oem:g('oem'), alt:g('alt'),
-             price:g('price'), labor:g('labor'), source:g('source'), note:g('note') };
+    const gen = c.dataset.kind === 'gen';
+    return Object.assign({ item:g('item'), decision: dec ? dec.value : '',
+             spec: gen ? g('spec') : '', oem: gen ? g('oem') : '', alt: gen ? g('alt') : '', price: gen ? g('price') : '',
+             labor:g('labor'), source:g('source'), note:g('note') }, readExt(c));
   });
   const vehicle = {};
   CAR.forEach(k => vehicle[k] = $(k).value.trim());
@@ -376,7 +531,8 @@ function readLocal(id){
 // 학생이 실제로 작성한 내용이 있는 임시본인지
 function hasContent(d){
   return !!d && !!(d.students || d.summary ||
-    (d.items || []).some(i => i.decision || i.spec || i.oem || i.alt || i.price || i.labor || i.source || i.note));
+    (d.items || []).some(i => i.decision || i.spec || i.oem || i.alt || i.price || i.labor || i.source || i.note ||
+      (i.oil && (i.oil.visc || i.oil.cap)) || (i.oils || []).length || (i.ofilters || []).length || (i.afilters || []).length));
 }
 let t; document.addEventListener('input', e => {
   if (['pick','rid','hideDone'].includes(e.target.id)) return;
@@ -396,7 +552,10 @@ function showRequest(r){
 }
 
 function itemsFromRequest(r){
-  return String(r.items || '').split(',').map(s => s.trim()).filter(Boolean).map(s => {
+  const list = String(r.items || '').split(',').map(s => s.trim()).filter(Boolean);
+  const hasOil = list.some(s => kindOf(s) === 'oil');
+  // 엔진오일 항목 안에 에어클리너 비교가 들어 있으니 따로 만들지 않음
+  return list.filter(s => !(hasOil && kindOf(s) === 'filter')).map(s => {
     const m = s.match(/^기타\((.*)\)$/);
     const it = { item: m ? m[1] : s };
     if (s === '타이어' && r.tireSize) it.spec = r.tireSize;
@@ -493,7 +652,15 @@ function validate(d){
     const n = `${i+1}번 항목`;
     if (!it.item) return `${n}의 이름을 입력해 주세요.`;
     if (!it.decision) return `${n}(${it.item})의 교체 판단을 골라 주세요.`;
-    if (!it.spec) return `${n}(${it.item})의 규격·사양을 입력해 주세요.`;
+    const k = kindOf(it.item);
+    if (k === 'oil'){
+      if (!it.oil || !it.oil.visc) return `${n}(${it.item})의 오일 점도를 입력해 주세요.`;
+      if (!it.oil.cap) return `${n}(${it.item})의 오일 용량을 입력해 주세요.`;
+      if (!(it.oils || []).some(o => o.name)) return `${n}(${it.item})에 추천 엔진오일을 하나 이상 적어 주세요.`;
+      if (!(it.ofilters || []).some(o => o.maker)) return `${n}(${it.item})에 오일필터를 하나 이상 적어 주세요.`;
+    } else if (k === 'filter'){
+      if (!(it.afilters || []).some(o => o.maker)) return `${n}(${it.item})에 에어클리너 제품을 하나 이상 적어 주세요.`;
+    } else if (!it.spec) return `${n}(${it.item})의 규격·사양을 입력해 주세요.`;
     if (!it.source) return `${n}(${it.item})의 근거 출처를 입력해 주세요.`;
   }
   return '';
@@ -525,18 +692,41 @@ function renderDoc(d){
   const v = d.vehicle, today = new Date().toLocaleDateString('ko-KR');
   const dash = x => x ? esc(x) : '-';
   const km = v.km ? esc(v.km) + ' km' : '-';
-  const its = d.items.map((it, i) => `
+  // 비교표: 가격이 적힌 줄 중 가장 싼 줄에 '최저가' 표시
+  const cmp = (title, rows, oil) => {
+    rows = (rows || []).filter(r => r.name || r.maker);
+    if (!rows.length) return '';
+    const ps = rows.map(r => Number(digits(r.price)) || Infinity);
+    const min = Math.min(...ps), many = ps.filter(p => p !== Infinity).length > 1;
+    const low = j => many && ps[j] === min ? '<span class="low">최저가</span>' : '';
+    const body = rows.map((r, j) => oil
+      ? `<tr><td>${esc(r.name)}</td><td>${dash(r.feat)}</td><td class="p">${low(j)}${won(r.price) || '-'}</td></tr>`
+      : `<tr><td class="k">${esc(r.kind)}</td><td>${esc(r.maker)}</td><td class="p">${low(j)}${won(r.price) || '-'}</td></tr>`).join('');
+    const head = oil ? '<tr><th>오일명</th><th>특징</th><th class="p">가격</th></tr>'
+                     : '<tr><th class="k">구분</th><th>제조사·제품명</th><th class="p">가격</th></tr>';
+    return `<table class="cmp"><caption>${title}</caption>${head}${body}</table>`;
+  };
+  const its = d.items.map((it, i) => {
+    const k = kindOf(it.item), o = it.oil || {};
+    const extra = k === 'oil'
+      ? `<div class="sub"><b>오일 점도</b>${dash(o.visc)} &nbsp;·&nbsp; <b>용량</b>${dash(o.cap)}${o.std ? ` &nbsp;·&nbsp; <b>규격</b>${esc(o.std)}` : ''}</div>` +
+        cmp('추천 엔진오일', it.oils, true) + cmp('오일필터 (순정 / AM 비교)', it.ofilters) + cmp('에어클리너 (순정 / AM 비교)', it.afilters)
+      : k === 'filter' ? cmp('에어클리너 (순정 / AM 비교)', it.afilters) : '';
+    return `
     <div class="it">
       <div class="it-h"><span>${i+1}. ${esc(it.item)}</span><span class="tag ${TAG[it.decision]||'no'}">${esc(it.decision||'-')}</span></div>
+      ${extra}
       <dl>
-        <dt>규격·사양</dt><dd>${dash(it.spec)}</dd>
+        ${k === 'gen' ? `<dt>규격·사양</dt><dd>${dash(it.spec)}</dd>` : ''}
         ${it.oem ? `<dt>순정 품번</dt><dd>${esc(it.oem)}</dd>` : ''}
         ${it.alt ? `<dt>호환·대체</dt><dd>${esc(it.alt)}</dd>` : ''}
-        <dt>예상 비용</dt><dd>부품 ${dash(it.price)}${it.labor ? ' · 공임 ' + esc(it.labor) : ''}</dd>
+        ${k === 'gen' ? `<dt>예상 비용</dt><dd>부품 ${dash(it.price)}${it.labor ? ' · 공임 ' + esc(it.labor) : ''}</dd>`
+                      : (it.labor ? `<dt>공임 참고</dt><dd>${esc(it.labor)}</dd>` : '')}
         ${it.note ? `<dt>판단 이유</dt><dd>${esc(it.note)}</dd>` : ''}
         <dt>근거</dt><dd>${dash(it.source)}</dd>
       </dl>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   $('doc').innerHTML = `
     <div class="top">
       <div><div class="club">YANGIL AUTO CLUB</div><h3>차량 부품 추천서</h3></div>
