@@ -10,7 +10,7 @@ const NOTIFY_EMAIL = true;   // 신청·추천서 제출 시 내 메일로 알�
 
 const HEADERS = [
   '접수번호', '접수일시', '진행상태', '담당학생',
-  '성함', '연락처',
+  '성함', '연락처', '차량번호',
   '제조사', '차종', '연식', '연료', '엔진·트림', '주행거리(km)', '차대번호',
   '요청항목', '타이어 규격', '타이어 메모', '최근 교체 이력', '증상·요청사항', '비고'
 ];
@@ -63,7 +63,7 @@ function saveRequest_(d) {
   const s = v => safe_(v || '');
   getSheet_().appendRow([
     s(d.id), new Date(), '접수', '',
-    s(d.name), s(d.contact),
+    s(d.name), s(d.contact), s(d.plate),
     s(d.maker), s(d.model), s(d.year), s(d.fuel), s(d.trim),
     d.km ? Number(d.km) : '', s(d.vin),
     s(d.items), s(d.tireSize), s(d.tireNote), s(d.history), s(d.memo), ''
@@ -72,6 +72,7 @@ function saveRequest_(d) {
     mail_(`[차량 케어] 새 신청 ${d.id} · ${d.model}`, [
       `접수번호: ${d.id}`,
       `신청자: ${d.name}`,
+      `차량번호: ${d.plate || '-'}`,
       `차량: ${d.maker} ${d.model} (${d.year}, ${d.fuel}) ${d.trim || ''}`,
       `주행거리: ${d.km ? Number(d.km).toLocaleString() : '-'} km`,
       `요청항목: ${d.items}`,
@@ -239,13 +240,26 @@ function getSheet_() {
   if (!sh) {
     sh = ss.insertSheet(SHEET_NAME);
     styleHeader_(sh, HEADERS);
+    const col = name => HEADERS.indexOf(name) + 1;
     sh.getRange('B:B').setNumberFormat('yyyy-mm-dd hh:mm');
-    sh.getRange('L:L').setNumberFormat('#,##0');
-    sh.getRange('M:M').setNumberFormat('@');
+    sh.getRange(1, col('주행거리(km)'), sh.getMaxRows(), 1).setNumberFormat('#,##0');
+    sh.getRange(1, col('차대번호'), sh.getMaxRows(), 1).setNumberFormat('@');
     const rule = SpreadsheetApp.newDataValidation().requireValueInList(STATUS, true).build();
     sh.getRange(2, 3, 999, 1).setDataValidation(rule);
+  } else {
+    migrateHeaders_(sh);
   }
   return sh;
+}
+
+/** 예전 시트에 '차량번호' 열이 없으면 '연락처' 오른쪽에 끼워 넣음 (기존 데이터는 그대로 유지) */
+function migrateHeaders_(sh) {
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  if (head.indexOf('차량번호') >= 0) return;
+  const after = head.indexOf('연락처') + 1;
+  if (after < 1) return;
+  sh.insertColumnAfter(after);
+  sh.getRange(1, after + 1).setValue('차량번호');
 }
 
 function getRecSheet_() {
