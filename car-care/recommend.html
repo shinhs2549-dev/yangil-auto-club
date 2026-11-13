@@ -104,7 +104,9 @@
   .tsize-lab{display:grid;grid-template-columns:1fr 18px 1fr 22px 1fr;gap:6px;font-size:11.5px;color:var(--sub);font-weight:700;margin-bottom:4px}
   .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);margin:8px 0 0;cursor:pointer}
   .chk input{accent-color:var(--accent)}
-  .rear{margin-top:8px}
+  .rear{margin-top:10px}
+  .axle{font-size:12.5px;font-weight:800;margin:2px 0 4px}
+  .t-rear select:disabled{opacity:.6;cursor:not-allowed}
   .r.r-tire,.rh.h-tire{grid-template-columns:130px 1fr 104px 124px 32px}
   .topspec{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px}
   @media (max-width:560px){
@@ -483,10 +485,11 @@ function parseTire(str){
   return m ? { w: m[1], a: m[2], r: m[3] } : {};
 }
 const tireStr = t => t && t.w && t.a && t.r ? `${t.w}/${t.a} R${t.r}` : '';
-function sizePicker(cls, t = {}){
+function sizePicker(cls, t = {}, title = ''){
   const w = document.createElement('div');
   w.className = cls;
-  w.innerHTML = '<div class="tsize-lab"><span>폭(mm)</span><span></span><span>편평비</span><span></span><span>인치</span></div>' +
+  w.innerHTML = (title ? `<div class="axle">${title}</div>` : '') +
+    '<div class="tsize-lab"><span>폭(mm)</span><span></span><span>편평비</span><span></span><span>인치</span></div>' +
     `<div class="tsize"><select class="t-w">${opts(T_W, t.w, '폭')}</select><span class="sep">/</span>` +
     `<select class="t-a">${opts(T_A, t.a, '편평비')}</select><span class="sep">R</span>` +
     `<select class="t-r">${opts(T_R, t.r, '인치')}</select></div>`;
@@ -506,18 +509,38 @@ function tireRow(d = {}){
   r.append(priceInput(d.price), rmBtn(r));
   return r;
 }
+const sameSize = (a, b) => !!a && !!b && a.w === b.w && a.a === b.a && a.r === b.r;
 function tireBlock(d = {}){
   const w = document.createElement('div');
-  const front = document.createElement('div'); front.className = 'f';
-  front.innerHTML = '<label class="t">타이어 규격<span class="req">*</span></label>';
-  front.append(sizePicker('t-front', d.tsize || {}));
+  const front = d.tsize || {};
+  // 예전 저장본은 square 값이 없음 → 뒤 규격이 없거나 같으면 스퀘어로 봄
+  const square = d.square !== undefined ? !!d.square : (!d.trear || !d.trear.w || sameSize(front, d.trear));
+  const size = document.createElement('div'); size.className = 'f';
+  size.innerHTML = '<label class="t">타이어 규격<span class="req">*</span></label>';
+  const fp = sizePicker('t-front', front, '앞 타이어');
   const chk = document.createElement('label'); chk.className = 'chk';
-  chk.innerHTML = '<input type="checkbox" class="t-diff"> 앞뒤 규격이 달라요 (뒤 타이어 규격 따로 입력)';
-  const rear = sizePicker('t-rear rear', d.trear || {});
-  const on = !!(d.trear && d.trear.w);
-  chk.querySelector('input').checked = on; rear.style.display = on ? '' : 'none';
-  chk.querySelector('input').addEventListener('change', e => rear.style.display = e.target.checked ? '' : 'none');
-  front.append(chk, rear);
+  chk.innerHTML = '<input type="checkbox" class="t-square"> 스퀘어 세팅 (앞뒤 같은 규격 — 뒤 타이어 자동 입력)';
+  const rp = sizePicker('t-rear rear', square ? front : (d.trear || {}), '뒤 타이어');
+  size.append(fp, chk, rp);
+  const sq = chk.querySelector('input');
+  sq.checked = square;
+  const sync = () => {
+    rp.querySelectorAll('select').forEach(sel => {
+      sel.disabled = sq.checked;
+      if (sq.checked) sel.value = fp.querySelector('.' + sel.className).value;
+    });
+  };
+  sq.addEventListener('change', sync);
+  fp.querySelectorAll('select').forEach(sel => sel.addEventListener('change', sync));
+  sync();
+
+  const pos = document.createElement('div'); pos.className = 'f';
+  pos.innerHTML = '<label class="t">교체 위치<span class="req">*</span></label>' +
+    '<select class="o-tpos"><option value="">선택</option><option>앞 (2개)</option><option>뒤 (2개)</option><option>앞·뒤 (4개)</option></select>';
+  pos.querySelector('.o-tpos').value = d.tpos || '';
+  const note = document.createElement('div'); note.className = 'note';
+  note.textContent = '💡 타이어는 좌우를 같이 바꾸는 것이 좋습니다.';
+
   const b = document.createElement('div'); b.className = 'blk'; b.dataset.key = 'tires';
   b.innerHTML = '<div class="blk-h"><b>추천 타이어</b><span>같은 규격 제품끼리 종류·가격 비교 (가격은 1개 기준)</span></div>' +
     '<div class="rh h-tire"><span>타이어 회사</span><span>타이어명</span><span>종류</span><span>가격(1개)</span><span></span></div>' +
@@ -525,14 +548,18 @@ function tireBlock(d = {}){
   const box = b.querySelector('.rows');
   ((d.tires && d.tires.length) ? d.tires : [{}, {}]).forEach(x => box.appendChild(tireRow(x)));
   b.querySelector('.addrow').addEventListener('click', () => { const r = tireRow(); box.appendChild(r); r.querySelector('select').focus(); });
-  w.append(front, b);
+  w.append(size, pos, note, b);
   return w;
 }
 function readTire(card){
-  const diff = card.querySelector('.t-diff');
+  const sq = card.querySelector('.t-square');
+  const front = readSize(card.querySelector('.t-front'));
+  const square = !!(sq && sq.checked);
   return {
-    tsize: readSize(card.querySelector('.t-front')),
-    trear: diff && diff.checked ? readSize(card.querySelector('.t-rear')) : null,
+    tsize: front,
+    square,
+    trear: square ? Object.assign({}, front) : readSize(card.querySelector('.t-rear')),
+    tpos: v_(card, 'tpos'),
     tires: [...card.querySelectorAll('.blk[data-key="tires"] .r')].map(r => ({
       brand: r.querySelector('.x-brand').value, name: r.querySelector('.x-name').value.trim(),
       type: r.querySelector('.x-type').value, price: digits(r.querySelector('.x-price').value)
@@ -700,7 +727,7 @@ function hasContent(d){
     (d.items || []).some(i => i.decision || i.spec || i.oem || i.alt || i.price || i.labor || i.source || i.note ||
       (i.oil && (i.oil.visc || i.oil.cap)) || i.pos || (i.oils || []).length || (i.ofilters || []).length ||
       (i.afilters || []).length || (i.pads || []).length || (i.rotor && i.rotor.act) || (i.rotors || []).length || i.dot || i.frange ||
-      (i.tires || []).length || (i.tsize && i.tsize.w && i.decision)));
+      (i.tires || []).length || i.tpos || (i.tsize && i.tsize.w && i.decision)));
 }
 let t; document.addEventListener('input', e => {
   if (['pick','rid','hideDone'].includes(e.target.id)) return;
@@ -835,7 +862,8 @@ function validate(d){
     } else if (k === 'tire'){
       const t = it.tsize || {};
       if (!t.w || !t.a || !t.r) return `${n}(${it.item})의 타이어 규격(폭·편평비·인치)을 모두 골라 주세요.`;
-      if (it.trear && !(it.trear.w && it.trear.a && it.trear.r)) return `${n}(${it.item})의 뒤 타이어 규격을 모두 골라 주세요.`;
+      if (!it.trear || !(it.trear.w && it.trear.a && it.trear.r)) return `${n}(${it.item})의 뒤 타이어 규격을 모두 골라 주세요. 앞뒤가 같으면 '스퀘어 세팅'을 체크하세요.`;
+      if (!it.tpos) return `${n}(${it.item})의 교체 위치(앞/뒤/앞·뒤)를 골라 주세요.`;
       if (!(it.tires || []).some(x => x.brand && x.name)) return `${n}(${it.item})에 추천 타이어(회사·타이어명)를 하나 이상 적어 주세요.`;
     } else if (k === 'fluid'){
       if (!it.dot) return `${n}(${it.item})의 DOT 규격을 골라 주세요.`;
@@ -913,7 +941,13 @@ function renderDoc(d){
       : k === 'filter' ? cmp('에어클리너', it.afilters)
       : k === 'pad' ? `<div class="sub"><b>교체 위치</b>${dash(it.pos)}</div>` + cmp('브레이크 패드', it.pads) + rotorDoc(it)
       : k === 'rotor' ? rotorDoc(it)
-      : k === 'tire' ? `<div class="sub"><b>규격</b>${dash(tireStr(it.tsize))}${it.trear ? ` (앞) &nbsp;/&nbsp; ${dash(tireStr(it.trear))} (뒤)` : ''}</div>` + tireDoc(it.tires)
+      : k === 'tire' ? (() => {
+          const sq = it.square !== undefined ? it.square : (!it.trear || sameSize(it.tsize, it.trear));
+          const size = sq ? `${dash(tireStr(it.tsize))} (스퀘어 세팅)`
+                          : `앞 ${dash(tireStr(it.tsize))} &nbsp;/&nbsp; 뒤 ${dash(tireStr(it.trear))}`;
+          return `<div class="sub"><b>규격</b>${size}${it.tpos ? ` &nbsp;·&nbsp; <b>교체 위치</b>${esc(it.tpos)}` : ''}</div>` +
+            tireDoc(it.tires) + '<div class="sub tipline">※ 타이어는 좌우를 같이 바꾸는 것이 좋습니다.</div>';
+        })()
       : k === 'fluid' ? `<div class="sub"><b>규격</b>${dash(it.dot)}${it.frange ? ` &nbsp;·&nbsp; <b>가격대</b>${esc(it.frange)}` : ''}</div>` : '';
     return `
     <div class="it">
