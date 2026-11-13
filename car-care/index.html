@@ -65,7 +65,11 @@
   .done h2{justify-content:center;font-size:20px}
   .done .id{display:inline-block;font-weight:900;font-size:20px;letter-spacing:.04em;padding:8px 16px;border-radius:10px;background:var(--field);border:1px solid var(--line);margin:8px 0 14px}
   .done p{color:var(--sub);font-size:14px;margin:4px 0}
-  .ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent);margin-top:18px}
+  .ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+  .done-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+  .home-btn{display:block;font-size:16px;font-weight:700;border-radius:12px;padding:15px;background:var(--accent);color:#fff;text-decoration:none}
+  .back{display:inline-block;color:#cbd5e1;font-size:13px;text-decoration:none;margin-bottom:14px}
+  .back:hover{color:#fff}
   footer{text-align:center;color:var(--sub);font-size:12px;padding:8px 16px 32px}
 </style>
 </head>
@@ -73,6 +77,7 @@
 
 <header>
   <div class="wrap">
+    <a class="back" href="../">← 동아리 처음 화면</a><br>
     <span class="badge">YANGIL AUTO CLUB</span>
     <h1>선생님 차량 케어 신청</h1>
     <p>차량 정보를 남겨 주시면 자동차 동아리 학생들이 맞는 부품과 적정 가격을 조사해 드립니다.</p>
@@ -227,7 +232,10 @@
     <div class="id" id="doneId"></div>
     <p>동아리 학생들이 조사한 뒤, 지도교사 검토를 거쳐 추천서를 보내 드릴게요.</p>
     <p>접수번호로 진행 상황을 문의하실 수 있어요.</p>
-    <button class="ghost" type="button" id="again">다른 차량 신청하기</button>
+    <div class="done-btns">
+      <a class="home-btn" href="../">처음 화면으로</a>
+      <button class="ghost" type="button" id="again">다른 차량 신청하기</button>
+    </div>
   </div>
 
 </div>
