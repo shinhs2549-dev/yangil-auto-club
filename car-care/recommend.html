@@ -159,6 +159,10 @@
 
   <section class="card">
     <h2><span class="n">2</span>차량 정보</h2>
+    <div class="f">
+      <label class="t" for="plate">차량번호<span class="opt">같은 차종이면 번호로 구분</span></label>
+      <input type="text" id="plate" style="font-weight:700;letter-spacing:.03em">
+    </div>
     <div class="row3">
       <div class="f"><label class="t" for="maker">제조사</label><input type="text" id="maker"></div>
       <div class="f"><label class="t" for="model">차종</label><input type="text" id="model"></div>
@@ -285,7 +289,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwy58N_H64N0C5KUc1fI
 
 const REVIEW = new URLSearchParams(location.search).has('review');
 const $ = id => document.getElementById(id);
-const CAR = ['maker','model','year','fuel','trim','km','vin'];
+const CAR = ['plate','maker','model','year','fuel','trim','km','vin'];
 
 const HINTS = {
   '엔진오일·오일필터': ['예: 0W-20 / API SP / 오일 4.2L (필터 포함)', '취급설명서의 정비 제원표에서 점도·규격·용량을 확인하고, 오일필터는 순정 품번으로 찾기'],
@@ -408,7 +412,7 @@ function renderList(){
   rows.forEach(r => {
     const tag = r.rec ? `추천서 ${r.rec}` : r.status;
     const items = r.items.length > 24 ? r.items.slice(0, 24) + '…' : r.items;
-    sel.add(new Option(`[${tag}] ${r.date} · ${r.car} · ${items}  (${r.id})`, r.id));
+    sel.add(new Option(`[${tag}] ${r.date} · ${r.car}${r.plate ? ' ' + r.plate : ''} · ${items}  (${r.id})`, r.id));
   });
   sel.value = rows.some(r => r.id === cur) ? cur : '';
 }
@@ -452,7 +456,7 @@ async function loadRec(){
     if ($('rid').value.trim().toUpperCase() !== id) return;   // 그 사이 다른 건을 고른 경우
     const r = data.request;
     if (r) showRequest(r);
-    const fromReq = r ? { maker:r.maker, model:r.model, year:r.year, fuel:r.fuel, trim:r.trim,
+    const fromReq = r ? { plate:r.plate, maker:r.maker, model:r.model, year:r.year, fuel:r.fuel, trim:r.trim,
                           km: r.km ? Number(r.km).toLocaleString('ko-KR') : '', vin:r.vin } : {};
     const local = readLocal(id);
     let d, text;
@@ -536,9 +540,10 @@ function renderDoc(d){
       <div class="meta">접수번호 <b>${esc(d.id)}</b><br>작성일 ${today}</div>
     </div>
     <table class="car">
-      <tr><th>차종</th><td>${dash([v.maker, v.model].filter(Boolean).join(' '))}</td><th>연식</th><td>${dash(v.year)}</td></tr>
-      <tr><th>연료</th><td>${dash(v.fuel)}</td><th>엔진·트림</th><td>${dash(v.trim)}</td></tr>
-      <tr><th>주행거리</th><td>${km}</td><th>차대번호</th><td>${dash(v.vin)}</td></tr>
+      <tr><th>차량번호</th><td>${dash(v.plate)}</td><th>차종</th><td>${dash([v.maker, v.model].filter(Boolean).join(' '))}</td></tr>
+      <tr><th>연식</th><td>${dash(v.year)}</td><th>연료</th><td>${dash(v.fuel)}</td></tr>
+      <tr><th>엔진·트림</th><td>${dash(v.trim)}</td><th>주행거리</th><td>${km}</td></tr>
+      <tr><th>차대번호</th><td colspan="3">${dash(v.vin)}</td></tr>
     </table>
     <h4>항목별 추천</h4>
     ${its || '<div class="box">작성된 항목이 없습니다.</div>'}

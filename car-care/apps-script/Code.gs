@@ -85,6 +85,7 @@ function saveRequest_(d) {
     '🚗 새 차량 케어 신청',
     `접수번호: ${d.id}`,
     `차량: ${d.maker} ${d.model} (${d.year}, ${d.fuel})${d.trim ? ' ' + d.trim : ''}`,
+    `차량번호: ${d.plate || '-'}`,
     `주행거리: ${d.km ? Number(d.km).toLocaleString() + ' km' : '-'}`,
     `요청 항목: ${d.items}`,
     d.tireSize ? `타이어 규격: ${d.tireSize}` : '',
@@ -112,6 +113,7 @@ function listRequests_() {
       id: id,
       date: d instanceof Date ? Utilities.formatDate(d, 'Asia/Seoul', 'MM/dd') : '',
       car: [r[c('제조사')], r[c('차종')], r[c('연식')]].filter(String).join(' '),
+      plate: String(r[c('차량번호')] || ''),
       items: String(r[c('요청항목')] || ''),
       status: r[c('진행상태')] || '접수',
       rec: recStatus[id] || ''
@@ -130,6 +132,7 @@ function findRequest_(id) {
     if (String(r[0]).toUpperCase() !== id) continue;
     return {
       id: id,
+      plate: String(r[c('차량번호')] || ''),
       maker: r[c('제조사')], model: r[c('차종')], year: String(r[c('연식')]),
       fuel: r[c('연료')], trim: r[c('엔진·트림')], km: r[c('주행거리(km)')],
       vin: r[c('차대번호')], items: r[c('요청항목')],
@@ -152,7 +155,7 @@ function saveRec_(d) {
   const review = d.review || {};
   const row = [
     id, new Date(), safe_(d.students || ''),
-    safe_([v.maker, v.model, v.year].filter(Boolean).join(' ')),
+    safe_([v.plate, v.maker, v.model, v.year].filter(Boolean).join(' ')),
     items.length,
     safe_(items.map(i => `${i.item}: ${i.decision}`).join(' / ')),
     safe_(d.summary || ''),
