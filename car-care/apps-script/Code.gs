@@ -20,6 +20,10 @@ const REC_HEADERS = [
 ];
 const STATUS = ['접수', '학생 배정', '추천서 작성중', '검토중', '전달 완료'];
 
+/* 텔레그램 알림 — 토큰·채팅방 ID는 코드에 쓰지 말고
+   [프로젝트 설정 ⚙️ > 스크립트 속성]에 TELEGRAM_TOKEN, TELEGRAM_CHAT_ID로 저장 */
+const RECOMMEND_URL = 'https://shinhs2549-dev.github.io/yangil-auto-club/car-care/recommend.html';
+
 /* ================= 요청 처리 ================= */
 
 function doPost(e) {
@@ -75,6 +79,17 @@ function saveRequest_(d) {
       d.memo ? `요청사항: ${d.memo}` : ''
     ]);
   }
+  // 단톡방에는 성함·연락처를 보내지 않음
+  tg_([
+    '🚗 새 차량 케어 신청',
+    `접수번호: ${d.id}`,
+    `차량: ${d.maker} ${d.model} (${d.year}, ${d.fuel})${d.trim ? ' ' + d.trim : ''}`,
+    `주행거리: ${d.km ? Number(d.km).toLocaleString() + ' km' : '-'}`,
+    `요청 항목: ${d.items}`,
+    d.tireSize ? `타이어 규격: ${d.tireSize}` : '',
+    '',
+    `추천서 작성 👉 ${RECOMMEND_URL}`
+  ]);
 }
 
 /** 접수 목록 (최신순, 성함·연락처 제외) */
@@ -162,6 +177,25 @@ function saveRec_(d) {
       '검토 페이지: recommend.html?review 주소로 열어 접수번호를 불러오세요.'
     ]);
   }
+  if (d.mode !== 'review') {
+    tg_([
+      '📝 추천서 제출',
+      `접수번호: ${id}`,
+      `차량: ${[v.maker, v.model, v.year].filter(Boolean).join(' ')}`,
+      `조사: ${d.students}`,
+      `항목: ${items.map(i => `${i.item}(${i.decision})`).join(', ')}`,
+      '→ 지도교사 검토 대기'
+    ]);
+  } else if (review.status === '수정 요청') {
+    tg_([
+      '🔁 추천서 수정 요청',
+      `접수번호: ${id} · ${[v.maker, v.model].filter(Boolean).join(' ')}`,
+      `조사: ${d.students}`,
+      review.comment ? `지도교사 의견: ${review.comment}` : '',
+      '',
+      `수정하기 👉 ${RECOMMEND_URL}`
+    ]);
+  }
 }
 
 function findRec_(id) {
@@ -234,6 +268,49 @@ function styleHeader_(sh, headers) {
   sh.setFrozenRows(1);
   sh.getRange(1, 1, 1, headers.length)
     .setFontWeight('bold').setBackground('#0f172a').setFontColor('#ffffff');
+}
+
+/* ================= 텔레그램 ================= */
+
+function tg_(lines) {
+  const p = PropertiesService.getScriptProperties();
+  const token = p.getProperty('TELEGRAM_TOKEN');
+  const chat = p.getProperty('TELEGRAM_CHAT_ID');
+  if (!token || !chat) return;
+  try {
+    UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      payload: JSON.stringify({
+        chat_id: chat,
+        text: lines.filter(l => l !== null && l !== undefined && l !== false).join('\n').replace(/\n{3,}/g, '\n\n'),
+        disable_web_page_preview: true
+      })
+    });
+  } catch (e) { console.log('텔레그램 전송 실패: ' + e); }
+}
+
+/** ① 봇을 단톡방에 넣고 단톡방에 /start 를 한 번 보낸 뒤 실행 → 채팅방 ID를 찾아 자동 저장 */
+function findTelegramChatId() {
+  const p = PropertiesService.getScriptProperties();
+  const token = p.getProperty('TELEGRAM_TOKEN');
+  if (!token) throw new Error('스크립트 속성에 TELEGRAM_TOKEN을 먼저 저장하세요.');
+  const res = JSON.parse(UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/getUpdates`, { muteHttpExceptions: true }).getContentText());
+  if (!res.ok) throw new Error('토큰이 올바르지 않아요: ' + res.description);
+  const chats = {};
+  (res.result || []).forEach(u => {
+    const m = u.message || u.my_chat_member || u.channel_post;
+    if (m && m.chat && m.chat.type !== 'private') chats[m.chat.id] = m.chat.title;
+  });
+  const ids = Object.keys(chats);
+  if (!ids.length) throw new Error('단톡방을 찾지 못했어요. 봇을 단톡방에 초대하고 /start 를 보낸 뒤 다시 실행하세요.');
+  ids.forEach(id => console.log(`${chats[id]} → ${id}`));
+  p.setProperty('TELEGRAM_CHAT_ID', ids[ids.length - 1]);
+  console.log(`저장 완료: ${chats[ids[ids.length - 1]]} (${ids[ids.length - 1]})`);
+}
+
+/** ② 테스트 메시지 보내기 */
+function testTelegram() {
+  tg_(['✅ 차량 케어 알림 연결 완료', '앞으로 새 신청과 추천서 소식이 이 방으로 옵니다.']);
 }
 
 /* ================= 유틸 ================= */
