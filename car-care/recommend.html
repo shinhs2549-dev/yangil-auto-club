@@ -94,6 +94,11 @@
   .rm:hover{color:var(--err);background:var(--chip)}
   .addrow{margin-top:8px;font:inherit;font-size:13px;font-weight:700;color:var(--accent);background:none;border:1.5px dashed var(--line);border-radius:9px;padding:8px;width:100%;cursor:pointer}
   .addrow:hover{border-color:var(--accent)}
+  .note{font-size:12.5px;background:var(--accent-soft);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+  .seg-rotor{margin-bottom:10px}
+  .blk .blk{background:var(--card);margin:0}
+  .rt-polish{display:grid;grid-template-columns:150px 1fr;gap:8px}
+  @media (max-width:560px){ .rt-polish{grid-template-columns:1fr} }
   .topspec{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px}
   @media (max-width:560px){
     .topspec{grid-template-columns:1fr 1fr}
@@ -143,6 +148,7 @@
   .doc table.cmp .p{text-align:right;white-space:nowrap;width:24%}
   .doc table.cmp .k{width:9%;white-space:nowrap;text-align:center}
   .doc table.cmp tr.oem td{background:#f8fafc;font-weight:600}
+  .doc .sub.tipline{color:#6b7280;font-size:11.5px;padding-top:6px}
   .doc .low{display:inline-block;font-size:10.5px;font-weight:700;color:#15803d;background:#dcfce7;border-radius:999px;padding:0 6px;margin-right:4px}
   .doc .box{border:1px solid #d1d5db;border-radius:8px;padding:10px 12px;white-space:pre-wrap;min-height:40px}
   .doc .warn{margin-top:20px;font-size:11.5px;color:#4b5563;background:#f9fafb;border-radius:8px;padding:10px 12px}
@@ -324,7 +330,7 @@
 <datalist id="itemList">
   <option value="엔진오일·오일필터"><option value="브레이크 패드"><option value="브레이크액">
   <option value="타이어"><option value="와이퍼"><option value="에어컨(실내) 필터">
-  <option value="엔진 에어필터"><option value="배터리">
+  <option value="엔진 에어필터"><option value="배터리"><option value="브레이크 디스크(로터)">
 </datalist>
 <datalist id="oilList">
   <option value="킥스(GS칼텍스)"><option value="지크(SK엔무브)"><option value="S-OIL 세븐">
@@ -332,6 +338,9 @@
 </datalist>
 <datalist id="filterList">
   <option value="보쉬"><option value="MANN"><option value="MAHLE"><option value="K&amp;N"><option value="HENGST"><option value="기타">
+</datalist>
+<datalist id="rotorList">
+  <option value="브렘보"><option value="ATE"><option value="짐머만(Zimmermann)"><option value="보쉬"><option value="TRW"><option value="기타">
 </datalist>
 <datalist id="padList">
   <option value="상신브레이크"><option value="보쉬"><option value="브렘보"><option value="ATE"><option value="TRW">
@@ -355,6 +364,7 @@ const HINTS = {
   '와이퍼':           ['예: 운전석 650mm / 조수석 400mm / 후면 300mm', '길이와 와이퍼 암 결합 방식(후크 등) 확인'],
   '에어컨(실내) 필터': ['예: 순정 품번 또는 호환 규격', '등급(일반·활성탄·고성능)에 따라 가격 차이가 큼'],
   '엔진 에어필터':     ['', '엔진 형식에 따라 규격이 달라지니 연식·엔진을 확인하고, 순정 품번을 찾은 뒤 같은 규격의 AM 제품과 가격 비교'],
+  '브레이크 디스크(로터)': ['', '로터 최소 두께(디스크 옆면 MIN TH 각인)와 편마모·떨림 여부를 보고 교체할지 연마할지 판단하기'],
   '배터리':           ['예: AGM 70Ah / 규격명', 'ISG(오토스탑) 차량은 AGM·EFB 여부 확인 필수']
 };
 
@@ -375,6 +385,7 @@ function applyHint(card){
 
 /* ---- 항목 종류: 엔진오일(oil) / 엔진 에어필터(filter) / 일반(gen) ---- */
 const kindOf = name => /엔진\s*오일/.test(name) ? 'oil'
+  : /로터|브레이크\s*디스크/.test(name) ? 'rotor'
   : /브레이크\s*패드/.test(name) ? 'pad'
   : (/에어\s*(필터|클리너)/.test(name) && !/에어컨|실내/.test(name)) ? 'filter' : 'gen';
 const digits = s => String(s ?? '').replace(/[^\d]/g, '');
@@ -404,6 +415,8 @@ const BLK = {
               oem:'순정 품번 (예: 26300-35505)', am:'제조사·제품명', feat:'고효율 여과지' },
   afilters: { title:'에어클리너', hint:'오일 교체 때 함께 교체 — 순정과 AM 비교', list:'filterList',
               oem:'순정 품번', am:'제조사·제품명', feat:'세척형 / 일반형' },
+  rotors:   { title:'로터 제품 비교', hint:'순정과 AM 비교', list:'rotorList',
+              oem:'순정 품번', am:'제조사·제품명', feat:'통풍형·슬롯형, 코팅' },
   pads:     { title:'브레이크 패드', hint:'소음·분진·제동력 같은 특징과 가격 비교', list:'padList',
               oem:'순정 품번 또는 제품명', am:'제조사·제품명 (예: 브렘보 P30 xxx)', feat:'세라믹, 저분진·저소음' }
 };
@@ -447,6 +460,40 @@ function readRows(card, key){
     price: digits(r.querySelector('.x-price').value)
   })).filter(x => x.name || x.feat || x.price);
 }
+let rotorSeq = 0;
+function rotorBlock(d = {}){
+  const r = d.rotor || {}, grp = 'rot' + (++rotorSeq);
+  const w = document.createElement('div'); w.className = 'blk rotor';
+  w.innerHTML = '<div class="blk-h"><b>브레이크 디스크(로터)</b><span>패드와 함께 상태 확인</span></div>' +
+    '<div class="note">💡 로터는 패드를 2번 교체할 때 1번 교체하는 것을 추천드려요.</div>' +
+    '<div class="seg seg-rotor">' + ['교체', '연마', '이번엔 안 함'].map(v =>
+      `<label><input type="radio" class="rt-act" name="${grp}" value="${v}"><span>${v}</span></label>`).join('') + '</div>' +
+    '<div class="rt-swap"></div>' +
+    '<div class="rt-polish"><div class="f" style="margin:0"><label class="t">연마 예상 비용</label></div>' +
+    '<div class="f" style="margin:0"><label class="t">비고</label><input type="text" class="rt-note" placeholder="예: 최소 두께 여유 있음, 떨림 있어 연마 권장"></div></div>';
+  w.querySelectorAll('.rt-act').forEach(x => x.checked = x.value === r.act);
+  w.querySelector('.rt-polish .f').append(priceInput(r.polishPrice));
+  w.querySelector('.rt-note').value = r.polishNote || '';
+  w.querySelector('.rt-swap').append(rowsBlock('rotors', d.rotors));
+  const sync = () => {
+    const a = (w.querySelector('.rt-act:checked') || {}).value;
+    w.querySelector('.rt-swap').style.display = a === '교체' ? '' : 'none';
+    w.querySelector('.rt-polish').style.display = a === '연마' ? '' : 'none';
+  };
+  w.querySelectorAll('.rt-act').forEach(x => x.addEventListener('change', sync));
+  sync();
+  return w;
+}
+function readRotor(card){
+  const w = card.querySelector('.blk.rotor');
+  if (!w) return {};
+  const act = (w.querySelector('.rt-act:checked') || {}).value || '';
+  return {
+    rotor: { act, polishPrice: act === '연마' ? digits(w.querySelector('.rt-polish .x-price').value) : '',
+             polishNote: act === '연마' ? w.querySelector('.rt-note').value.trim() : '' },
+    rotors: act === '교체' ? readRows(card, 'rotors') : []
+  };
+}
 const v_ = (card, c) => ((card.querySelector('.o-' + c) || {}).value || '').trim();
 function readExt(card){
   const kind = card.dataset.kind, out = {};
@@ -457,6 +504,7 @@ function readExt(card){
   }
   if (kind === 'oil' || kind === 'filter') out.afilters = readRows(card, 'afilters');
   if (kind === 'pad'){ out.pos = v_(card, 'pos'); out.pads = readRows(card, 'pads'); }
+  if (kind === 'pad' || kind === 'rotor') Object.assign(out, readRotor(card));
   return out;
 }
 function buildExt(card, d = {}){
@@ -485,14 +533,16 @@ function buildExt(card, d = {}){
     top.innerHTML = '<label class="t">교체 위치<span class="req">*</span></label>' +
       '<select class="o-pos"><option value="">선택</option><option>앞</option><option>뒤</option><option>앞·뒤</option></select>';
     top.querySelector('.o-pos').value = d.pos || '';
-    ext.append(top, rowsBlock('pads', d.pads));
+    ext.append(top, rowsBlock('pads', d.pads), rotorBlock(d));
+  } else if (kind === 'rotor'){
+    ext.append(rotorBlock(d));
   }
 }
 
 function addItem(d = {}){
   const card = $('itemTpl').content.firstElementChild.cloneNode(true);
   const grp = 'dec' + (++radioSeq);
-  card.querySelectorAll('input[type=radio]').forEach(r => { r.name = grp; r.checked = r.value === d.decision; });
+  card.querySelectorAll('input[type=radio]').forEach(r => { r.classList.add('dec'); r.name = grp; r.checked = r.value === d.decision; });
   const set = (cls, v) => card.querySelector('.k-' + cls).value = v || '';
   ['item','spec','oem','alt','price','labor','source','note'].forEach(k => set(k, d[k]));
   buildExt(card, d);
@@ -511,7 +561,7 @@ function addItem(d = {}){
 function collect(){
   const items = [...document.querySelectorAll('#items .item')].map(c => {
     const g = k => c.querySelector('.k-' + k).value.trim();
-    const dec = c.querySelector('input[type=radio]:checked');
+    const dec = c.querySelector('input.dec:checked');
     const gen = c.dataset.kind === 'gen';
     return Object.assign({ item:g('item'), decision: dec ? dec.value : '',
              spec: gen ? g('spec') : '', oem: gen ? g('oem') : '', alt: gen ? g('alt') : '', price: gen ? g('price') : '',
@@ -553,7 +603,7 @@ function hasContent(d){
   return !!d && !!(d.students || d.summary ||
     (d.items || []).some(i => i.decision || i.spec || i.oem || i.alt || i.price || i.labor || i.source || i.note ||
       (i.oil && (i.oil.visc || i.oil.cap)) || i.pos || (i.oils || []).length || (i.ofilters || []).length ||
-      (i.afilters || []).length || (i.pads || []).length));
+      (i.afilters || []).length || (i.pads || []).length || (i.rotor && i.rotor.act) || (i.rotors || []).length));
 }
 let t; document.addEventListener('input', e => {
   if (['pick','rid','hideDone'].includes(e.target.id)) return;
@@ -574,9 +624,9 @@ function showRequest(r){
 
 function itemsFromRequest(r){
   const list = String(r.items || '').split(',').map(s => s.trim()).filter(Boolean);
-  const hasOil = list.some(s => kindOf(s) === 'oil');
+  const hasOil = list.some(s => kindOf(s) === 'oil'), hasPad = list.some(s => kindOf(s) === 'pad');
   // 엔진오일 항목 안에 에어클리너 비교가 들어 있으니 따로 만들지 않음
-  return list.filter(s => !(hasOil && kindOf(s) === 'filter')).map(s => {
+  return list.filter(s => !(hasOil && kindOf(s) === 'filter') && !(hasPad && kindOf(s) === 'rotor')).map(s => {
     const m = s.match(/^기타\((.*)\)$/);
     const it = { item: m ? m[1] : s };
     if (s === '타이어' && r.tireSize) it.spec = r.tireSize;
@@ -684,6 +734,10 @@ function validate(d){
     } else if (k === 'pad'){
       if (!it.pos) return `${n}(${it.item})의 교체 위치(앞/뒤)를 골라 주세요.`;
       if (!(it.pads || []).some(o => o.name)) return `${n}(${it.item})에 브레이크 패드 제품을 하나 이상 적어 주세요.`;
+      if (it.rotor && it.rotor.act === '교체' && !(it.rotors || []).some(o => o.name)) return `${n}(${it.item})에서 로터를 교체로 골랐으면 로터 제품을 하나 이상 적어 주세요.`;
+    } else if (k === 'rotor'){
+      if (!it.rotor || !it.rotor.act) return `${n}(${it.item})의 로터 처리(교체/연마/이번엔 안 함)를 골라 주세요.`;
+      if (it.rotor.act === '교체' && !(it.rotors || []).some(o => o.name)) return `${n}(${it.item})에 로터 제품을 하나 이상 적어 주세요.`;
     } else if (!it.spec) return `${n}(${it.item})의 규격·사양을 입력해 주세요.`;
     if (!it.source) return `${n}(${it.item})의 근거 출처를 입력해 주세요.`;
   }
@@ -730,13 +784,22 @@ function renderDoc(d){
     return `<table class="cmp"><caption>${title}</caption>` +
       '<tr><th class="k">구분</th><th>제품명</th><th>특징</th><th class="p">가격</th></tr>' + body + '</table>';
   };
+  const rotorDoc = it => {
+    const r = it.rotor || {};
+    let h = '';
+    if (r.act === '교체') h = '<div class="sub"><b>브레이크 디스크(로터)</b>교체 권장</div>' + cmp('브레이크 디스크(로터)', it.rotors);
+    else if (r.act === '연마') h = `<div class="sub"><b>브레이크 디스크(로터)</b>연마 권장${r.polishPrice ? ' · 예상 비용 ' + won(r.polishPrice) : ''}${r.polishNote ? ' · ' + esc(r.polishNote) : ''}</div>`;
+    else if (r.act) h = `<div class="sub"><b>브레이크 디스크(로터)</b>${esc(r.act)}</div>`;
+    return h + '<div class="sub tipline">※ 로터는 패드를 2번 교체할 때 1번 교체하는 것을 추천드려요.</div>';
+  };
   const its = d.items.map((it, i) => {
     const k = kindOf(it.item), o = it.oil || {};
     const extra = k === 'oil'
       ? `<div class="sub"><b>오일 점도</b>${dash(o.visc)} &nbsp;·&nbsp; <b>용량</b>${dash(o.cap)}${o.std ? ` &nbsp;·&nbsp; <b>규격</b>${esc(o.std)}` : ''}</div>` +
         cmp('엔진오일', it.oils) + cmp('오일필터', it.ofilters) + cmp('에어클리너', it.afilters)
       : k === 'filter' ? cmp('에어클리너', it.afilters)
-      : k === 'pad' ? `<div class="sub"><b>교체 위치</b>${dash(it.pos)}</div>` + cmp('브레이크 패드', it.pads) : '';
+      : k === 'pad' ? `<div class="sub"><b>교체 위치</b>${dash(it.pos)}</div>` + cmp('브레이크 패드', it.pads) + rotorDoc(it)
+      : k === 'rotor' ? rotorDoc(it) : '';
     return `
     <div class="it">
       <div class="it-h"><span>${i+1}. ${esc(it.item)}</span><span class="tag ${TAG[it.decision]||'no'}">${esc(it.decision||'-')}</span></div>
