@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>차량 케어 신청</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3f4f6; --card:#ffffff; --ink:#111827; --sub:#6b7280; --line:#e5e7eb;
+    --brand:#0f172a; --accent:#f97316; --accent-soft:#fff7ed; --ok:#16a34a; --err:#dc2626;
+    --field:#f9fafb; --chip:#f3f4f6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b0f17; --card:#131a26; --ink:#e5e7eb; --sub:#9ca3af; --line:#253045;
+      --brand:#0a0e15; --accent:#fb923c; --accent-soft:#2a1a0e; --field:#0f1520; --chip:#1b2433;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{background:var(--brand);color:#fff;padding:28px 16px 64px}
+  .wrap{max-width:680px;margin:0 auto}
+  .badge{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:3px 10px;margin-bottom:12px}
+  h1{margin:0 0 6px;font-size:26px;font-weight:900;letter-spacing:-.02em}
+  header p{margin:0;color:#cbd5e1;font-size:14px}
+  main{padding:0 16px 48px;margin-top:-40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 20px;margin-bottom:14px}
+  .notice{background:var(--accent-soft);border-color:transparent;font-size:13.5px}
+  .notice b{color:var(--accent)}
+  .notice ul{margin:6px 0 0;padding-left:18px}
+  h2{font-size:16px;margin:0 0 16px;display:flex;align-items:center;gap:8px}
+  h2 .n{width:24px;height:24px;border-radius:7px;background:var(--brand);color:#fff;font-size:12px;display:grid;place-items:center}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) h2 .n{background:var(--accent);color:#111} }
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:520px){ .row{grid-template-columns:1fr} }
+  .f{margin-bottom:14px}
+  label.t{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+  .req{color:var(--accent);margin-left:2px}
+  .opt{color:var(--sub);font-weight:400;font-size:12px;margin-left:4px}
+  input[type=text],select,textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{min-height:84px;resize:vertical}
+  .hint{font-size:12px;color:var(--sub);margin-top:5px}
+  .warn{font-size:12px;color:var(--err);margin-top:5px;display:none}
+  .chips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  @media (min-width:560px){ .chips{grid-template-columns:repeat(3,1fr)} }
+  .chip{position:relative}
+  .chip input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+  .chip span{display:block;text-align:center;font-size:14px;padding:11px 8px;border-radius:10px;background:var(--chip);border:1.5px solid transparent;user-select:none;transition:.15s}
+  .chip input:checked + span{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .chip input:disabled + span{opacity:.35;text-decoration:line-through}
+  .chip input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+  .reveal{display:none;margin-top:14px;padding:14px;border-radius:12px;background:var(--field);border:1px dashed var(--line)}
+  .reveal.on{display:block}
+  .agree{display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+  .agree input{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex:none}
+  .agree small{display:block;color:var(--sub);margin-top:4px;font-size:12px}
+  button{width:100%;font:inherit;font-size:16px;font-weight:700;border:0;border-radius:12px;padding:15px;background:var(--accent);color:#fff;cursor:pointer}
+  button:disabled{opacity:.6;cursor:wait}
+  .err-box{display:none;color:var(--err);font-size:13.5px;margin-bottom:12px}
+  .done{display:none;text-align:center;padding:36px 20px}
+  .done .ic{width:56px;height:56px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;margin:0 auto 14px;font-size:28px}
+  .done h2{justify-content:center;font-size:20px}
+  .done .id{display:inline-block;font-weight:900;font-size:20px;letter-spacing:.04em;padding:8px 16px;border-radius:10px;background:var(--field);border:1px solid var(--line);margin:8px 0 14px}
+  .done p{color:var(--sub);font-size:14px;margin:4px 0}
+  .ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent);margin-top:18px}
+  footer{text-align:center;color:var(--sub);font-size:12px;padding:8px 16px 32px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="badge">YANGIL AUTO CLUB</span>
+    <h1>선생님 차량 케어 신청</h1>
+    <p>차량 정보를 남겨 주시면 자동차 동아리 학생들이 맞는 부품과 적정 가격을 조사해 드립니다.</p>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <div class="card notice">
+    <b>이렇게 진행돼요</b>
+    <ul>
+      <li>신청 → 동아리 학생이 부품 규격·품번·가격대 조사 → 지도교사 검토 → 추천서 전달</li>
+      <li>조사와 추천까지만 진행합니다. 실제 교체는 정비소나 카센터에서 받아 주세요.</li>
+      <li>학생들에게는 <b>차량 정보만</b> 전달되고, 성함과 연락처는 전달되지 않습니다.</li>
+    </ul>
+  </div>
+
+  <form id="form" novalidate>
+
+    <section class="card">
+      <h2><span class="n">1</span>신청자</h2>
+      <div class="row">
+        <div class="f">
+          <label class="t" for="name">성함<span class="req">*</span></label>
+          <input type="text" id="name" name="name" autocomplete="name" placeholder="홍길동">
+        </div>
+        <div class="f">
+          <label class="t" for="contact">연락처<span class="opt">선택</span></label>
+          <input type="text" id="contact" name="contact" placeholder="비우면 교내 메신저로 회신">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">2</span>차량 정보</h2>
+      <div class="row">
+        <div class="f">
+          <label class="t" for="maker">제조사<span class="req">*</span></label>
+          <select id="maker" name="maker">
+            <option value="">선택</option>
+            <option>현대</option><option>기아</option><option>제네시스</option>
+            <option>KGM(쌍용)</option><option>르노코리아</option><option>쉐보레(GM)</option>
+            <option>BMW</option><option>벤츠</option><option>아우디</option><option>폭스바겐</option>
+            <option>볼보</option><option>도요타·렉서스</option><option>혼다</option><option>테슬라</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="f">
+          <label class="t" for="model">차종<span class="req">*</span></label>
+          <input type="text" id="model" name="model" placeholder="예: 아반떼 CN7, 쏘렌토 MQ4">
+        </div>
+      </div>
+      <div class="row">
+        <div class="f">
+          <label class="t" for="year">연식<span class="req">*</span></label>
+          <select id="year" name="year"><option value="">선택</option></select>
+        </div>
+        <div class="f">
+          <label class="t" for="fuel">연료<span class="req">*</span></label>
+          <select id="fuel" name="fuel">
+            <option value="">선택</option>
+            <option>가솔린</option><option>디젤</option><option>LPG</option>
+            <option>하이브리드</option><option>플러그인 하이브리드</option><option>전기</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="f">
+          <label class="t" for="trim">엔진·트림<span class="opt">아는 만큼</span></label>
+          <input type="text" id="trim" name="trim" placeholder="예: 1.6 터보 / 프레스티지">
+        </div>
+        <div class="f">
+          <label class="t" for="km">현재 주행거리 (km)<span class="req">*</span></label>
+          <input type="text" id="km" name="km" inputmode="numeric" placeholder="예: 58,000">
+        </div>
+      </div>
+      <div class="f">
+        <label class="t" for="vin">차대번호<span class="opt">선택 · 정확한 품번 조회에 도움</span></label>
+        <input type="text" id="vin" name="vin" maxlength="17" placeholder="17자리 영문+숫자" style="text-transform:uppercase;letter-spacing:.05em">
+        <div class="hint">자동차등록증 ‘차대번호’ 칸, 또는 앞유리 왼쪽 아래에서 확인할 수 있어요.</div>
+        <div class="warn" id="vinWarn">차대번호는 17자리이며 I, O, Q는 쓰이지 않아요. 다시 확인해 주세요.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">3</span>점검·교체 희망 항목<span class="req">*</span></h2>
+      <div class="chips" id="items">
+        <label class="chip"><input type="checkbox" name="items" value="엔진오일·오일필터" data-ice><span>엔진오일·필터</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="브레이크 패드"><span>브레이크 패드</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="브레이크액"><span>브레이크액</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="타이어" id="tireChk"><span>타이어</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="와이퍼"><span>와이퍼</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="에어컨(실내) 필터"><span>에어컨 필터</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="엔진 에어필터" data-ice><span>엔진 에어필터</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="배터리"><span>배터리</span></label>
+        <label class="chip"><input type="checkbox" name="items" value="기타" id="etcChk"><span>기타</span></label>
+      </div>
+      <div class="hint" id="evHint" style="display:none">전기차는 엔진오일과 엔진 에어필터 항목이 없어요.</div>
+
+      <div class="reveal" id="tireBox">
+        <div class="f">
+          <label class="t" for="tireSize">타이어 규격<span class="opt">선택</span></label>
+          <input type="text" id="tireSize" name="tireSize" placeholder="예: 235/55R19">
+          <div class="hint">타이어 옆면의 숫자, 또는 운전석 문 안쪽 스티커에 적혀 있어요. 모르시면 비워 두세요.</div>
+        </div>
+        <div class="f" style="margin-bottom:0">
+          <label class="t" for="tireNote">타이어 관련 메모<span class="opt">선택</span></label>
+          <input type="text" id="tireNote" name="tireNote" placeholder="예: 4년 사용, 소음 큼, 앞 2짝만 교체 희망">
+        </div>
+      </div>
+
+      <div class="reveal" id="etcBox">
+        <label class="t" for="etc">기타 항목</label>
+        <input type="text" id="etc" name="etc" placeholder="예: 헤드램프 전구, 점화플러그">
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="n">4</span>추가 정보</h2>
+      <div class="f">
+        <label class="t" for="history">최근 교체 이력<span class="opt">아는 만큼</span></label>
+        <textarea id="history" name="history" placeholder="예: 엔진오일 올해 3월(5만km), 브레이크 패드는 출고 후 한 번도 안 바꿈"></textarea>
+      </div>
+      <div class="f" style="margin-bottom:0">
+        <label class="t" for="memo">증상·요청사항<span class="opt">선택</span></label>
+        <textarea id="memo" name="memo" placeholder="예: 브레이크 밟을 때 끼익 소리, 순정품 선호, 예산 10만원 이내"></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <label class="agree">
+        <input type="checkbox" id="agree">
+        <span>개인정보 수집·이용에 동의합니다.<span class="req">*</span>
+          <small>수집 항목: 성함, 연락처(선택), 차량 정보 · 목적: 부품 조사 및 추천서 회신 · 보관: 해당 학년도 말까지 보관 후 파기</small>
+        </span>
+      </label>
+    </section>
+
+    <div class="err-box" id="errBox"></div>
+    <button type="submit" id="submitBtn">신청하기</button>
+  </form>
+
+  <div class="card done" id="done">
+    <div class="ic">✓</div>
+    <h2>신청이 접수되었습니다</h2>
+    <div class="id" id="doneId"></div>
+    <p>동아리 학생들이 조사한 뒤, 지도교사 검토를 거쳐 추천서를 보내 드릴게요.</p>
+    <p>접수번호로 진행 상황을 문의하실 수 있어요.</p>
+    <button class="ghost" type="button" id="again">다른 차량 신청하기</button>
+  </div>
+
+</div>
+</main>
+
+<footer>양일고등학교 자동차 동아리</footer>
+
+<script>
+/* ===== 설정: Apps Script 배포 후 받은 웹 앱 URL을 붙여넣으세요 ===== */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwy58N_H64N0C5KUc1fIG5-wyEDsDbUIB8FC3plCtpaCKOjDkWA5NbiJo32v0ZtTQ3QyA/exec';
+/* ================================================================== */
+
+const $ = id => document.getElementById(id);
+const form = $('form');
+
+// 연식 목록
+(() => {
+  const sel = $('year'), now = new Date().getFullYear() + 1;
+  for (let y = now; y >= 2005; y--) sel.add(new Option(y + '년', y));
+  sel.add(new Option('2004년 이전', '2004년 이전'));
+})();
+
+// 주행거리 콤마
+$('km').addEventListener('input', e => {
+  const d = e.target.value.replace(/\D/g, '').slice(0, 7);
+  e.target.value = d ? Number(d).toLocaleString('ko-KR') : '';
+});
+
+// 차대번호 검사
+const vinOk = v => !v || /^[A-HJ-NPR-Z0-9]{17}$/.test(v);
+$('vin').addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+});
+$('vin').addEventListener('blur', e => {
+  $('vinWarn').style.display = vinOk(e.target.value) ? 'none' : 'block';
+});
+
+// 전기차면 엔진 관련 항목 비활성화
+$('fuel').addEventListener('change', e => {
+  const ev = e.target.value === '전기';
+  document.querySelectorAll('[data-ice]').forEach(c => { c.disabled = ev; if (ev) c.checked = false; });
+  $('evHint').style.display = ev ? 'block' : 'none';
+});
+
+// 타이어·기타 입력칸 열기
+$('tireChk').addEventListener('change', e => $('tireBox').classList.toggle('on', e.target.checked));
+$('etcChk').addEventListener('change', e => $('etcBox').classList.toggle('on', e.target.checked));
+
+function makeId(){
+  const d = new Date();
+  const md = String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+  const r = Math.random().toString(36).slice(2,6).toUpperCase();
+  return `C${md}-${r}`;
+}
+
+function showErr(msg, el){
+  const b = $('errBox'); b.textContent = msg; b.style.display = 'block';
+  if (el) { el.focus({preventScroll:true}); el.scrollIntoView({behavior:'smooth', block:'center'}); }
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  $('errBox').style.display = 'none';
+
+  const v = id => $(id).value.trim();
+  const items = [...document.querySelectorAll('input[name=items]:checked')].map(c => c.value);
+
+  if (!v('name'))  return showErr('성함을 입력해 주세요.', $('name'));
+  if (!v('maker')) return showErr('제조사를 선택해 주세요.', $('maker'));
+  if (!v('model')) return showErr('차종을 입력해 주세요.', $('model'));
+  if (!v('year'))  return showErr('연식을 선택해 주세요.', $('year'));
+  if (!v('fuel'))  return showErr('연료를 선택해 주세요.', $('fuel'));
+  if (!v('km'))    return showErr('현재 주행거리를 입력해 주세요.', $('km'));
+  if (!vinOk(v('vin'))) return showErr('차대번호를 다시 확인해 주세요. 모르시면 비워 두셔도 됩니다.', $('vin'));
+  if (!items.length) return showErr('점검·교체 희망 항목을 하나 이상 골라 주세요.', $('items'));
+  if (items.includes('기타') && !v('etc')) return showErr('기타 항목 내용을 적어 주세요.', $('etc'));
+  if (!$('agree').checked) return showErr('개인정보 수집·이용 동의가 필요합니다.', $('agree'));
+
+  const data = {
+    id: makeId(),
+    name: v('name'), contact: v('contact'),
+    maker: v('maker'), model: v('model'), year: v('year'), fuel: v('fuel'),
+    trim: v('trim'), km: v('km').replace(/,/g,''), vin: v('vin'),
+    items: items.map(i => i === '기타' ? `기타(${v('etc')})` : i).join(', '),
+    tireSize: items.includes('타이어') ? v('tireSize') : '',
+    tireNote: items.includes('타이어') ? v('tireNote') : '',
+    history: v('history'), memo: v('memo')
+  };
+
+  if (SCRIPT_URL.startsWith('PASTE')) {
+    console.log('전송 데이터(설정 전 테스트):', data);
+    return showErr('아직 저장 주소가 설정되지 않았어요. (관리자: index.html의 SCRIPT_URL을 설정해 주세요)');
+  }
+
+  const btn = $('submitBtn');
+  btn.disabled = true; btn.textContent = '보내는 중…';
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(data)
+    });
+    form.style.display = 'none';
+    $('doneId').textContent = data.id;
+    $('done').style.display = 'block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  } catch (err) {
+    showErr('전송에 실패했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+  } finally {
+    btn.disabled = false; btn.textContent = '신청하기';
+  }
+});
+
+$('again').addEventListener('click', () => {
+  form.reset();
+  ['tireBox','etcBox'].forEach(id => $(id).classList.remove('on'));
+  document.querySelectorAll('[data-ice]').forEach(c => c.disabled = false);
+  $('evHint').style.display = 'none';
+  $('done').style.display = 'none';
+  form.style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+</script>
+</body>
+</html>

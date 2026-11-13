@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부품 추천서 작성</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3f4f6; --card:#ffffff; --ink:#111827; --sub:#6b7280; --line:#e5e7eb;
+    --brand:#0f172a; --accent:#f97316; --accent-soft:#fff7ed; --ok:#16a34a; --err:#dc2626; --amber:#d97706;
+    --field:#f9fafb; --chip:#f3f4f6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b0f17; --card:#131a26; --ink:#e5e7eb; --sub:#9ca3af; --line:#253045;
+      --brand:#0a0e15; --accent:#fb923c; --accent-soft:#2a1a0e; --field:#0f1520; --chip:#1b2433;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{background:var(--brand);color:#fff;padding:28px 16px 64px}
+  .wrap{max-width:720px;margin:0 auto}
+  .badge{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:3px 10px;margin-bottom:12px}
+  .badge.rv{background:var(--accent);color:#111}
+  h1{margin:0 0 6px;font-size:26px;font-weight:900;letter-spacing:-.02em}
+  header p{margin:0;color:#cbd5e1;font-size:14px}
+  main{padding:0 16px 48px;margin-top:-40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 20px;margin-bottom:14px}
+  h2{font-size:16px;margin:0 0 16px;display:flex;align-items:center;gap:8px}
+  h2 .n{width:24px;height:24px;border-radius:7px;background:var(--brand);color:#fff;font-size:12px;display:grid;place-items:center}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) h2 .n{background:var(--accent);color:#111} }
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media (max-width:560px){ .row,.row3{grid-template-columns:1fr} }
+  .f{margin-bottom:14px}
+  label.t{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+  .req{color:var(--accent);margin-left:2px}
+  .opt{color:var(--sub);font-weight:400;font-size:12px;margin-left:4px}
+  input[type=text],select,textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{min-height:80px;resize:vertical}
+  .hint{font-size:12px;color:var(--sub);margin-top:5px}
+  .load{display:flex;gap:8px}
+  .load input{flex:1;text-transform:uppercase;letter-spacing:.05em}
+  .load select{flex:1;min-width:0}
+  .hidedone{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--sub);margin-top:8px;cursor:pointer}
+  .hidedone input{accent-color:var(--accent)}
+  .manual{margin-top:8px;font-size:13px;color:var(--sub)}
+  .manual summary{cursor:pointer}
+  .btn{font:inherit;font-size:15px;font-weight:700;border:0;border-radius:10px;padding:11px 16px;background:var(--brand);color:#fff;cursor:pointer;white-space:nowrap}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .btn{background:#253045} }
+  .btn.accent{background:var(--accent);color:#fff}
+  .btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .msg{font-size:13px;margin-top:8px;display:none}
+  .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+  .req-box{display:none;background:var(--accent-soft);border-radius:12px;padding:14px 16px;font-size:13.5px;margin-top:4px}
+  .req-box b{color:var(--accent)}
+  .req-box div{margin-top:3px}
+  .item{border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;background:var(--card)}
+  .item-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .item-head .no{font-weight:900;color:var(--accent);font-size:14px;flex:none}
+  .item-head input{font-weight:700}
+  .del{background:none;border:0;color:var(--sub);font-size:13px;cursor:pointer;flex:none;padding:6px}
+  .del:hover{color:var(--err)}
+  .tip{font-size:12px;color:var(--sub);background:var(--field);border-radius:8px;padding:8px 10px;margin:-4px 0 12px;display:none}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .seg label{position:relative}
+  .seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+  .seg span{display:block;text-align:center;font-size:13px;padding:10px 4px;border-radius:9px;background:var(--chip);border:1.5px solid transparent;user-select:none}
+  .seg input:checked + span{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+  .add{width:100%;font:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:1.5px dashed var(--line);background:transparent;color:var(--sub);cursor:pointer}
+  .add:hover{border-color:var(--accent);color:var(--accent)}
+  .review{display:none;border:2px solid var(--accent)}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .actions .btn{padding:15px;font-size:16px}
+  .saved{font-size:12px;color:var(--sub);text-align:center;margin-top:10px}
+
+  /* ===== 추천서 문서 ===== */
+  #docView{display:none}
+  .doc-bar{display:flex;gap:10px;margin-bottom:14px}
+  .doc-bar .btn{flex:1;padding:14px}
+  .doc{background:#fff;color:#111;border-radius:12px;padding:36px 34px;font-size:13px;line-height:1.6;border:1px solid #e5e7eb}
+  .doc h3{margin:0;font-size:24px;font-weight:900;letter-spacing:-.02em}
+  .doc .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0f172a;padding-bottom:12px;margin-bottom:18px;gap:12px}
+  .doc .meta{text-align:right;font-size:12px;color:#4b5563}
+  .doc .club{font-size:11px;font-weight:700;letter-spacing:.1em;color:#f97316;margin-bottom:4px}
+  .doc table.car{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12.5px}
+  .doc table.car th,.doc table.car td{border:1px solid #d1d5db;padding:7px 9px;text-align:left}
+  .doc table.car th{background:#f3f4f6;width:16%;font-weight:700}
+  .doc h4{font-size:14px;margin:22px 0 10px;padding-left:8px;border-left:4px solid #f97316}
+  .doc .it{border:1px solid #d1d5db;border-radius:8px;margin-bottom:10px;page-break-inside:avoid;break-inside:avoid}
+  .doc .it-h{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f9fafb;border-bottom:1px solid #d1d5db;font-weight:700}
+  .doc .tag{font-size:11.5px;padding:2px 9px;border-radius:999px;font-weight:700}
+  .doc .tag.now{background:#fee2e2;color:#b91c1c}
+  .doc .tag.check{background:#fef3c7;color:#92400e}
+  .doc .tag.no{background:#e5e7eb;color:#374151}
+  .doc .it dl{display:grid;grid-template-columns:90px 1fr;margin:0;padding:8px 12px;gap:3px 10px}
+  .doc .it dt{color:#6b7280;font-size:12px}
+  .doc .it dd{margin:0}
+  .doc .box{border:1px solid #d1d5db;border-radius:8px;padding:10px 12px;white-space:pre-wrap;min-height:40px}
+  .doc .warn{margin-top:20px;font-size:11.5px;color:#4b5563;background:#f9fafb;border-radius:8px;padding:10px 12px}
+  .doc .sign{display:flex;justify-content:flex-end;gap:28px;margin-top:22px;font-size:12.5px}
+  .doc .sign span{border-bottom:1px solid #9ca3af;padding:0 6px 2px;min-width:110px;display:inline-block}
+
+  @media print{
+    @page{size:A4;margin:14mm}
+    body{background:#fff}
+    header,#formView,.doc-bar,footer{display:none!important}
+    main{margin:0;padding:0}
+    #docView{display:block!important}
+    .doc{border:0;padding:0;border-radius:0}
+  }
+  footer{text-align:center;color:var(--sub);font-size:12px;padding:8px 16px 32px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="badge" id="modeBadge">YANGIL AUTO CLUB</span>
+    <h1 id="pageTitle">부품 추천서 작성</h1>
+    <p id="pageDesc">접수 목록에서 차량을 고른 뒤, 항목마다 규격·품번·가격·근거를 조사해서 적어 주세요.</p>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<div id="formView">
+
+  <section class="card">
+    <h2><span class="n">1</span>접수 정보</h2>
+    <div class="f">
+      <label class="t" for="pick">접수 목록에서 선택<span class="req">*</span></label>
+      <div class="load">
+        <select id="pick"><option value="">목록 불러오는 중…</option></select>
+        <button type="button" class="btn" id="refreshBtn" title="목록 새로고침">↻</button>
+      </div>
+      <label class="hidedone" id="hideDoneWrap"><input type="checkbox" id="hideDone" checked> 전달 완료 건 숨기기</label>
+      <details class="manual">
+        <summary>접수번호 직접 입력</summary>
+        <div class="load" style="margin-top:8px">
+          <input type="text" id="rid" placeholder="예: C1103-AB12">
+          <button type="button" class="btn" id="loadBtn">불러오기</button>
+        </div>
+      </details>
+      <div class="msg" id="loadMsg"></div>
+      <div class="req-box" id="reqBox"></div>
+    </div>
+    <div class="f" style="margin-bottom:0">
+      <label class="t" for="students">조사 학생<span class="req">*</span></label>
+      <input type="text" id="students" placeholder="학번 이름, 여러 명이면 쉼표로 (예: 20701 김민준, 20715 이서연)">
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">2</span>차량 정보</h2>
+    <div class="row3">
+      <div class="f"><label class="t" for="maker">제조사</label><input type="text" id="maker"></div>
+      <div class="f"><label class="t" for="model">차종</label><input type="text" id="model"></div>
+      <div class="f"><label class="t" for="year">연식</label><input type="text" id="year"></div>
+    </div>
+    <div class="row3">
+      <div class="f"><label class="t" for="fuel">연료</label><input type="text" id="fuel"></div>
+      <div class="f"><label class="t" for="trim">엔진·트림</label><input type="text" id="trim"></div>
+      <div class="f"><label class="t" for="km">주행거리(km)</label><input type="text" id="km" inputmode="numeric"></div>
+    </div>
+    <div class="f" style="margin-bottom:0">
+      <label class="t" for="vin">차대번호<span class="opt">있으면 순정 품번 조회에 사용</span></label>
+      <input type="text" id="vin" style="text-transform:uppercase;letter-spacing:.05em">
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">3</span>항목별 추천</h2>
+    <div id="items"></div>
+    <button type="button" class="add" id="addBtn">+ 항목 추가</button>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">4</span>종합 의견</h2>
+    <textarea id="summary" placeholder="예: 주행거리 대비 브레이크 패드는 출고 후 미교체라 우선 점검을 권장합니다. 엔진오일은 순정 규격 제품 중 가격 차이가 크니 아래 대체품도 참고하세요."></textarea>
+  </section>
+
+  <section class="card review" id="reviewCard">
+    <h2><span class="n">✓</span>지도교사 검토</h2>
+    <div class="f">
+      <label class="t" for="rvStatus">검토 상태</label>
+      <select id="rvStatus">
+        <option>검토중</option><option>수정 요청</option><option>검토 완료</option>
+      </select>
+    </div>
+    <div class="f" style="margin-bottom:0">
+      <label class="t" for="rvComment">지도교사 의견<span class="opt">추천서에 표시됨</span></label>
+      <textarea id="rvComment" placeholder="예: 학생 조사 내용을 확인했습니다. 브레이크 패드는 정비소에서 잔량 확인 후 교체하세요."></textarea>
+    </div>
+  </section>
+
+  <div class="msg" id="saveMsg" style="text-align:center;margin-bottom:10px"></div>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="previewBtn">추천서 미리보기</button>
+    <button type="button" class="btn accent" id="submitBtn">제출하기</button>
+  </div>
+  <div class="saved" id="savedNote">작성 내용은 이 기기에 자동으로 임시 저장됩니다.</div>
+</div>
+
+<div id="docView">
+  <div class="doc-bar">
+    <button type="button" class="btn ghost" id="backBtn">← 돌아가서 수정</button>
+    <button type="button" class="btn accent" id="printBtn">인쇄 / PDF 저장</button>
+  </div>
+  <div class="doc" id="doc"></div>
+</div>
+
+</div>
+</main>
+
+<footer>양일고등학교 자동차 동아리</footer>
+
+<template id="itemTpl">
+  <div class="item">
+    <div class="item-head">
+      <span class="no"></span>
+      <input type="text" class="k-item" list="itemList" placeholder="항목 (예: 엔진오일·오일필터)">
+      <button type="button" class="del">삭제</button>
+    </div>
+    <div class="tip"></div>
+    <div class="f">
+      <label class="t">교체 판단<span class="req">*</span></label>
+      <div class="seg">
+        <label><input type="radio" value="지금 교체 권장"><span>지금 교체 권장</span></label>
+        <label><input type="radio" value="점검 후 결정"><span>점검 후 결정</span></label>
+        <label><input type="radio" value="아직 교체 불필요"><span>아직 불필요</span></label>
+      </div>
+    </div>
+    <div class="f">
+      <label class="t">규격·사양<span class="req">*</span></label>
+      <input type="text" class="k-spec">
+    </div>
+    <div class="row">
+      <div class="f">
+        <label class="t">순정 품번<span class="opt">선택</span></label>
+        <input type="text" class="k-oem" placeholder="예: 26300-35505">
+      </div>
+      <div class="f">
+        <label class="t">호환·대체 부품<span class="opt">선택</span></label>
+        <input type="text" class="k-alt" placeholder="규격이 맞는 다른 제품">
+      </div>
+    </div>
+    <div class="row">
+      <div class="f">
+        <label class="t">예상 부품 가격</label>
+        <input type="text" class="k-price" placeholder="예: 4~6만원">
+      </div>
+      <div class="f">
+        <label class="t">공임 참고</label>
+        <input type="text" class="k-labor" placeholder="예: 정비소 2~3만원 / 직접 교체 가능">
+      </div>
+    </div>
+    <div class="f">
+      <label class="t">근거 출처<span class="req">*</span></label>
+      <input type="text" class="k-source" placeholder="예: 취급설명서 정비 제원표, 순정부품 조회 사이트">
+    </div>
+    <div class="f" style="margin-bottom:0">
+      <label class="t">판단 이유<span class="opt">선택</span></label>
+      <textarea class="k-note" placeholder="왜 이렇게 판단했는지 (주행거리, 교체 주기, 증상 등)"></textarea>
+    </div>
+  </div>
+</template>
+
+<datalist id="itemList">
+  <option value="엔진오일·오일필터"><option value="브레이크 패드"><option value="브레이크액">
+  <option value="타이어"><option value="와이퍼"><option value="에어컨(실내) 필터">
+  <option value="엔진 에어필터"><option value="배터리">
+</datalist>
+
+<script>
+/* ===== 설정: index.html과 같은 웹 앱 URL을 붙여넣으세요 ===== */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwy58N_H64N0C5KUc1fIG5-wyEDsDbUIB8FC3plCtpaCKOjDkWA5NbiJo32v0ZtTQ3QyA/exec';
+/* =========================================================== */
+
+const REVIEW = new URLSearchParams(location.search).has('review');
+const $ = id => document.getElementById(id);
+const CAR = ['maker','model','year','fuel','trim','km','vin'];
+
+const HINTS = {
+  '엔진오일·오일필터': ['예: 0W-20 / API SP / 오일 4.2L (필터 포함)', '취급설명서의 정비 제원표에서 점도·규격·용량을 확인하고, 오일필터는 순정 품번으로 찾기'],
+  '브레이크 패드':    ['예: 앞 패드 / 순정 품번 기준', '앞·뒤를 구분하고, 실제 잔량은 정비소 점검이 필요하다고 적기'],
+  '브레이크액':       ['예: DOT4 / 약 1L', '취급설명서의 규격(DOT)과 교체 주기 확인'],
+  '타이어':           ['예: 225/45R18 95W', '폭·편평비·림 지름에 하중지수·속도기호까지 일치해야 함. 제조 주차(DOT 4자리)도 확인'],
+  '와이퍼':           ['예: 운전석 650mm / 조수석 400mm / 후면 300mm', '길이와 와이퍼 암 결합 방식(후크 등) 확인'],
+  '에어컨(실내) 필터': ['예: 순정 품번 또는 호환 규격', '등급(일반·활성탄·고성능)에 따라 가격 차이가 큼'],
+  '엔진 에어필터':     ['예: 순정 품번 또는 호환 규격', '엔진 형식에 따라 규격이 달라지니 연식·엔진 확인'],
+  '배터리':           ['예: AGM 70Ah / 규격명', 'ISG(오토스탑) 차량은 AGM·EFB 여부 확인 필수']
+};
+
+let radioSeq = 0;
+
+function renumber(){
+  document.querySelectorAll('#items .item').forEach((el,i) => el.querySelector('.no').textContent = String(i+1).padStart(2,'0'));
+}
+
+function applyHint(card){
+  const name = card.querySelector('.k-item').value.trim();
+  const h = HINTS[name] || ['규격·사양', ''];
+  card.querySelector('.k-spec').placeholder = h[0];
+  const tip = card.querySelector('.tip');
+  tip.textContent = h[1] ? '조사 팁 · ' + h[1] : '';
+  tip.style.display = h[1] ? 'block' : 'none';
+}
+
+function addItem(d = {}){
+  const card = $('itemTpl').content.firstElementChild.cloneNode(true);
+  const grp = 'dec' + (++radioSeq);
+  card.querySelectorAll('input[type=radio]').forEach(r => { r.name = grp; r.checked = r.value === d.decision; });
+  const set = (cls, v) => card.querySelector('.k-' + cls).value = v || '';
+  ['item','spec','oem','alt','price','labor','source','note'].forEach(k => set(k, d[k]));
+  card.querySelector('.k-item').addEventListener('input', () => applyHint(card));
+  card.querySelector('.del').addEventListener('click', () => {
+    if (confirm('이 항목을 삭제할까요?')) { card.remove(); renumber(); saveLocal(); }
+  });
+  $('items').appendChild(card);
+  applyHint(card); renumber();
+  return card;
+}
+
+function collect(){
+  const items = [...document.querySelectorAll('#items .item')].map(c => {
+    const g = k => c.querySelector('.k-' + k).value.trim();
+    const dec = c.querySelector('input[type=radio]:checked');
+    return { item:g('item'), decision: dec ? dec.value : '', spec:g('spec'), oem:g('oem'), alt:g('alt'),
+             price:g('price'), labor:g('labor'), source:g('source'), note:g('note') };
+  });
+  const vehicle = {};
+  CAR.forEach(k => vehicle[k] = $(k).value.trim());
+  return {
+    type:'rec', mode: REVIEW ? 'review' : 'student',
+    id: $('rid').value.trim().toUpperCase(),
+    students: $('students').value.trim(),
+    vehicle, items, summary: $('summary').value.trim(),
+    review: { status: $('rvStatus').value, comment: $('rvComment').value.trim() },
+    savedAt: new Date().toISOString()
+  };
+}
+
+function fill(d){
+  $('students').value = d.students || '';
+  CAR.forEach(k => $(k).value = (d.vehicle && d.vehicle[k]) || '');
+  $('items').innerHTML = '';
+  (d.items || []).forEach(addItem);
+  $('summary').value = d.summary || '';
+  if (d.review){ $('rvStatus').value = d.review.status || '검토중'; $('rvComment').value = d.review.comment || ''; }
+}
+
+/* ---- 임시 저장 (이 기기) ---- */
+const key = () => 'rec-draft-' + ($('rid').value.trim().toUpperCase() || 'new');
+function saveLocal(){
+  try { localStorage.setItem(key(), JSON.stringify(collect())); } catch(e){}
+}
+function readLocal(id){
+  try { return JSON.parse(localStorage.getItem('rec-draft-' + id) || 'null'); } catch(e){ return null; }
+}
+let t; document.addEventListener('input', () => { clearTimeout(t); t = setTimeout(saveLocal, 600); });
+
+/* ---- 불러오기 ---- */
+function msg(el, text, ok){ el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); el.style.display = 'block'; }
+
+function showRequest(r){
+  const box = $('reqBox');
+  const line = (k, v) => v ? `<div><b>${k}</b> ${esc(v)}</div>` : '';
+  box.innerHTML = '<b>선생님 요청 내용</b>' +
+    line('요청 항목', r.items) + line('타이어 규격', r.tireSize) + line('타이어 메모', r.tireNote) +
+    line('최근 교체 이력', r.history) + line('증상·요청', r.memo);
+  box.style.display = 'block';
+}
+
+function itemsFromRequest(r){
+  return String(r.items || '').split(',').map(s => s.trim()).filter(Boolean).map(s => {
+    const m = s.match(/^기타\((.*)\)$/);
+    const it = { item: m ? m[1] : s };
+    if (s === '타이어' && r.tireSize) it.spec = r.tireSize;
+    return it;
+  });
+}
+
+/* ---- 접수 목록 ---- */
+let LIST = [];
+function renderList(){
+  const sel = $('pick'), cur = $('rid').value.trim().toUpperCase();
+  const hide = $('hideDone').checked;
+  const rows = LIST.filter(r => !hide || r.status !== '전달 완료' || r.id === cur);
+  sel.innerHTML = '';
+  sel.add(new Option(rows.length ? `접수 건을 선택하세요 (${rows.length}건)` : '표시할 접수 건이 없어요', ''));
+  rows.forEach(r => {
+    const tag = r.rec ? `추천서 ${r.rec}` : r.status;
+    const items = r.items.length > 24 ? r.items.slice(0, 24) + '…' : r.items;
+    sel.add(new Option(`[${tag}] ${r.date} · ${r.car} · ${items}  (${r.id})`, r.id));
+  });
+  sel.value = rows.some(r => r.id === cur) ? cur : '';
+}
+async function loadList(){
+  if (SCRIPT_URL.startsWith('PASTE')){ $('pick').innerHTML = '<option value="">저장 주소 미설정</option>'; return; }
+  $('pick').innerHTML = '<option value="">목록 불러오는 중…</option>';
+  try {
+    const data = await (await fetch(SCRIPT_URL + '?list=1')).json();
+    LIST = data.list || [];
+    renderList();
+  } catch(e){
+    $('pick').innerHTML = '<option value="">목록을 불러오지 못했어요 (↻ 다시 시도)</option>';
+  }
+}
+$('pick').addEventListener('change', e => {
+  if (!e.target.value) return;
+  $('rid').value = e.target.value;
+  loadRec();
+});
+$('refreshBtn').addEventListener('click', loadList);
+$('hideDone').addEventListener('change', renderList);
+$('loadBtn').addEventListener('click', () => loadRec());
+
+async function loadRec(){
+  const id = $('rid').value.trim().toUpperCase();
+  $('rid').value = id;
+  if (!id) return msg($('loadMsg'), '접수번호를 입력해 주세요.');
+  if (SCRIPT_URL.startsWith('PASTE')){
+    const local = readLocal(id);
+    if (local){ fill(local); return msg($('loadMsg'), '이 기기에 임시 저장된 내용을 불러왔어요.', true); }
+    return msg($('loadMsg'), '저장 주소가 설정되지 않아 직접 입력해야 해요. (관리자: SCRIPT_URL 설정)');
+  }
+  const btn = $('loadBtn'); btn.disabled = true; btn.textContent = '불러오는 중…';
+  try {
+    const res = await fetch(SCRIPT_URL + '?id=' + encodeURIComponent(id));
+    const data = await res.json();
+    if (!data.ok) throw new Error('none');
+    if (data.request) showRequest(data.request);
+    const local = readLocal(id);
+    if (data.rec){
+      const useLocal = !REVIEW && local && local.savedAt > (data.rec.savedAt || '');
+      fill(useLocal ? local : data.rec);
+      msg($('loadMsg'), useLocal ? '제출본보다 최신인 임시 저장본을 불러왔어요.' : '제출된 추천서를 불러왔어요.', true);
+    } else if (local && local.items && local.items.length){
+      fill(local);
+      msg($('loadMsg'), '이 기기에 임시 저장된 내용을 불러왔어요.', true);
+    } else {
+      const r = data.request;
+      fill({ vehicle: { maker:r.maker, model:r.model, year:r.year, fuel:r.fuel, trim:r.trim,
+                        km: r.km ? Number(r.km).toLocaleString('ko-KR') : '', vin:r.vin },
+             items: itemsFromRequest(r) });
+      msg($('loadMsg'), '차량 정보와 요청 항목을 불러왔어요.', true);
+    }
+  } catch(e){
+    msg($('loadMsg'), '해당 접수번호를 찾지 못했어요. 번호를 다시 확인해 주세요.');
+  } finally { btn.disabled = false; btn.textContent = '불러오기'; $('pick').value = LIST.some(r => r.id === id) ? id : ''; }
+}
+
+/* ---- 검사 ---- */
+function validate(d){
+  if (!d.id) return '접수번호를 입력해 주세요.';
+  if (!REVIEW && !d.students) return '조사 학생을 입력해 주세요.';
+  if (!d.items.length) return '추천 항목을 하나 이상 작성해 주세요.';
+  for (const [i, it] of d.items.entries()){
+    const n = `${i+1}번 항목`;
+    if (!it.item) return `${n}의 이름을 입력해 주세요.`;
+    if (!it.decision) return `${n}(${it.item})의 교체 판단을 골라 주세요.`;
+    if (!it.spec) return `${n}(${it.item})의 규격·사양을 입력해 주세요.`;
+    if (!it.source) return `${n}(${it.item})의 근거 출처를 입력해 주세요.`;
+  }
+  return '';
+}
+
+/* ---- 제출 ---- */
+$('submitBtn').addEventListener('click', async () => {
+  const d = collect();
+  const err = validate(d);
+  if (err) return msg($('saveMsg'), err);
+  if (SCRIPT_URL.startsWith('PASTE')) return msg($('saveMsg'), '저장 주소가 설정되지 않았어요. (관리자: SCRIPT_URL 설정)');
+  const btn = $('submitBtn'); btn.disabled = true; btn.textContent = '저장 중…';
+  try {
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(d) });
+    saveLocal();
+    setTimeout(loadList, 1500);
+    msg($('saveMsg'), REVIEW ? '검토 내용이 저장되었어요.' : '제출되었어요. 지도교사 검토 후 선생님께 전달됩니다.', true);
+  } catch(e){
+    msg($('saveMsg'), '저장에 실패했어요. 인터넷 연결을 확인해 주세요.');
+  } finally { btn.disabled = false; btn.textContent = REVIEW ? '검토 저장' : '제출하기'; }
+});
+
+/* ---- 추천서 문서 ---- */
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const TAG = { '지금 교체 권장':'now', '점검 후 결정':'check', '아직 교체 불필요':'no' };
+
+function renderDoc(d){
+  const v = d.vehicle, today = new Date().toLocaleDateString('ko-KR');
+  const dash = x => x ? esc(x) : '-';
+  const km = v.km ? esc(v.km) + ' km' : '-';
+  const its = d.items.map((it, i) => `
+    <div class="it">
+      <div class="it-h"><span>${i+1}. ${esc(it.item)}</span><span class="tag ${TAG[it.decision]||'no'}">${esc(it.decision||'-')}</span></div>
+      <dl>
+        <dt>규격·사양</dt><dd>${dash(it.spec)}</dd>
+        ${it.oem ? `<dt>순정 품번</dt><dd>${esc(it.oem)}</dd>` : ''}
+        ${it.alt ? `<dt>호환·대체</dt><dd>${esc(it.alt)}</dd>` : ''}
+        <dt>예상 비용</dt><dd>부품 ${dash(it.price)}${it.labor ? ' · 공임 ' + esc(it.labor) : ''}</dd>
+        ${it.note ? `<dt>판단 이유</dt><dd>${esc(it.note)}</dd>` : ''}
+        <dt>근거</dt><dd>${dash(it.source)}</dd>
+      </dl>
+    </div>`).join('');
+  $('doc').innerHTML = `
+    <div class="top">
+      <div><div class="club">YANGIL AUTO CLUB</div><h3>차량 부품 추천서</h3></div>
+      <div class="meta">접수번호 <b>${esc(d.id)}</b><br>작성일 ${today}</div>
+    </div>
+    <table class="car">
+      <tr><th>차종</th><td>${dash([v.maker, v.model].filter(Boolean).join(' '))}</td><th>연식</th><td>${dash(v.year)}</td></tr>
+      <tr><th>연료</th><td>${dash(v.fuel)}</td><th>엔진·트림</th><td>${dash(v.trim)}</td></tr>
+      <tr><th>주행거리</th><td>${km}</td><th>차대번호</th><td>${dash(v.vin)}</td></tr>
+    </table>
+    <h4>항목별 추천</h4>
+    ${its || '<div class="box">작성된 항목이 없습니다.</div>'}
+    ${d.summary ? `<h4>종합 의견</h4><div class="box">${esc(d.summary)}</div>` : ''}
+    ${d.review && d.review.comment ? `<h4>지도교사 의견</h4><div class="box">${esc(d.review.comment)}</div>` : ''}
+    <div class="warn">본 추천서는 자동차 동아리 학생들이 공개 자료를 바탕으로 조사한 참고 자료입니다. 실제 교체 전 정비소에서 차량 상태를 확인해 주시고, 브레이크·타이어 등 안전 관련 부품은 반드시 전문 정비소에서 교체해 주세요. 가격은 조사 시점 기준이며 변동될 수 있습니다.</div>
+    <div class="sign">
+      <div>조사 <span>${dash(d.students)}</span></div>
+      <div>검토 <span>자동차 동아리 지도교사</span></div>
+    </div>`;
+}
+
+$('previewBtn').addEventListener('click', () => {
+  renderDoc(collect());
+  $('formView').style.display = 'none'; $('docView').style.display = 'block';
+  window.scrollTo({top:0});
+});
+$('backBtn').addEventListener('click', () => {
+  $('docView').style.display = 'none'; $('formView').style.display = 'block';
+});
+$('printBtn').addEventListener('click', () => window.print());
+$('addBtn').addEventListener('click', () => addItem().querySelector('.k-item').focus());
+
+/* ---- 모드 ---- */
+if (REVIEW){
+  document.title = '추천서 검토';
+  $('modeBadge').textContent = 'REVIEW MODE'; $('modeBadge').classList.add('rv');
+  $('pageTitle').textContent = '추천서 검토';
+  $('pageDesc').textContent = '제출된 추천서를 불러와 확인하고, 의견을 남긴 뒤 PDF로 저장해 전달하세요.';
+  $('reviewCard').style.display = 'block';
+  $('submitBtn').textContent = '검토 저장';
+  $('hideDone').checked = false;
+} else {
+  addItem();
+}
+loadList();
+</script>
+</body>
+</html>
