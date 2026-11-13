@@ -352,10 +352,15 @@ function testTelegram() {
 
 /* ================= 유틸 ================= */
 
+/** 메일 알림 — 실패해도 저장·텔레그램은 계속 진행 */
 function mail_(subject, lines) {
-  const me = Session.getEffectiveUser().getEmail();
-  if (!me) return;
-  MailApp.sendEmail(me, subject, lines.filter(Boolean).concat(['', SpreadsheetApp.getActive().getUrl()]).join('\n'));
+  try {
+    const me = Session.getEffectiveUser().getEmail();
+    if (!me) return log_('메일: 받는 주소를 알 수 없어요.');
+    MailApp.sendEmail(me, subject, lines.filter(Boolean).concat(['', SpreadsheetApp.getActive().getUrl()]).join('\n'));
+  } catch (e) {
+    log_('메일 전송 실패: ' + e);
+  }
 }
 
 // 수식 주입 방지 (=, +, -, @로 시작하는 값)
