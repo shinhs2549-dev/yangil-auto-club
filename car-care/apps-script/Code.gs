@@ -61,10 +61,14 @@ function setup() {
 
 function saveRequest_(d) {
   const s = v => safe_(v || '');
-  getSheet_().appendRow([
-    s(d.id), new Date(), '접수', '',
+  const sh = getSheet_();
+  const id = String(d.id || '').toUpperCase();
+  if (!id) throw new Error('접수번호 없음');
+  if (rowOf_(sh, id) > 0) return;   // 같은 신청이 다시 전송된 경우 한 번만 저장
+  sh.appendRow([
+    s(id), new Date(), '접수', '',
     s(d.name), s(d.contact), s(d.plate),
-    s(d.maker), s(d.model), s(d.year), s(d.fuel), s(d.trim),
+    s(d.maker), s(d.model), /^\d{4}$/.test(String(d.year)) ? Number(d.year) : s(d.year), s(d.fuel), s(d.trim),
     d.km ? Number(d.km) : '', s(d.vin),
     s(d.items), s(d.tireSize), s(d.tireNote), s(d.history), s(d.memo), ''
   ]);
@@ -152,7 +156,13 @@ function saveRec_(d) {
 
   const v = d.vehicle || {};
   const items = d.items || [];
-  const review = d.review || {};
+  const at = rowOf_(sh, id);
+  const review = Object.assign({}, d.review || {});
+  // 학생 제출로는 지도교사 의견을 바꾸지 않음 (시트에 있던 의견 유지)
+  if (d.mode !== 'review' && at > 0) {
+    review.comment = String(sh.getRange(at, REC_HEADERS.indexOf('지도교사 의견') + 1).getValue() || '');
+  }
+  d.review = review;
   const row = [
     id, new Date(), safe_(d.students || ''),
     safe_([v.plate, v.maker, v.model, v.year].filter(Boolean).join(' ')),
@@ -164,9 +174,7 @@ function saveRec_(d) {
     JSON.stringify(d)
   ];
 
-  const ids = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 1).getValues().map(r => String(r[0]).toUpperCase());
-  const at = ids.indexOf(id);
-  if (at >= 1) sh.getRange(at + 1, 1, 1, row.length).setValues([row]);
+  if (at > 0) sh.getRange(at, 1, 1, row.length).setValues([row]);
   else sh.appendRow(row);
 
   updateRequestStatus_(id, d);
@@ -178,7 +186,7 @@ function saveRec_(d) {
       `차량: ${[v.maker, v.model, v.year].filter(Boolean).join(' ')}`,
       `항목: ${items.map(i => `${i.item}(${i.decision})`).join(', ')}`,
       '',
-      '검토 페이지: recommend.html?review 주소로 열어 접수번호를 불러오세요.'
+      `검토 페이지: ${RECOMMEND_URL}?review`
     ]);
   }
   if (d.mode !== 'review') {
@@ -224,10 +232,8 @@ function findRec_(id) {
 /** 신청 시트의 담당학생·진행상태 자동 갱신 */
 function updateRequestStatus_(id, d) {
   const sh = getSheet_();
-  const ids = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 1).getValues().map(r => String(r[0]).toUpperCase());
-  const at = ids.indexOf(id);
-  if (at < 1) return;
-  const r = at + 1;
+  const r = rowOf_(sh, id);
+  if (r < 1) return;
   if (d.students) sh.getRange(r, 4).setValue(safe_(d.students));
   const cur = sh.getRange(r, 3).getValue();
   if (d.mode !== 'review' && ['접수', '학생 배정', '추천서 작성중'].indexOf(cur) >= 0) {
@@ -363,10 +369,20 @@ function mail_(subject, lines) {
   }
 }
 
-// 수식 주입 방지 (=, +, -, @로 시작하는 값)
+// 시트가 값을 바꾸지 않게 항상 글자로 저장
+// (연락처 앞자리 0, 엔진 "2.0", 차종 "9-3"이 날짜로 바뀌는 것, =로 시작하는 수식 방지)
 function safe_(v) {
   v = String(v);
-  return /^[=+\-@]/.test(v) ? "'" + v : v;
+  return v === '' ? '' : "'" + v;
+}
+
+/** 접수번호가 있는 행 번호(1부터). 없으면 -1 */
+function rowOf_(sh, id) {
+  const ids = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 1).getValues();
+  for (let i = 1; i < ids.length; i++) {
+    if (String(ids[i][0]).toUpperCase() === id) return i + 1;
+  }
+  return -1;
 }
 
 function json_(o) {

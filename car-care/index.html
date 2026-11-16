@@ -256,6 +256,7 @@
     <div class="id" id="doneId"></div>
     <p>동아리 학생들이 조사한 뒤, 지도교사 검토를 거쳐 추천서를 보내 드릴게요.</p>
     <p>접수번호로 진행 상황을 문의하실 수 있어요.</p>
+    <p id="doneNote" style="display:none;color:var(--err)">전송은 했지만 접수 확인을 하지 못했어요. 위 접수번호를 자동차 동아리 지도교사에게 알려 주세요.</p>
     <div class="done-btns">
       <a class="home-btn" href="../">처음 화면으로</a>
       <button class="ghost" type="button" id="again">다른 차량 신청하기</button>
@@ -345,6 +346,20 @@ function makeId(){
   return `C${md}-${r}`;
 }
 
+let reqId = makeId();   // 다시 전송해도 같은 번호 → 서버가 한 번만 저장
+
+// 전송 뒤 서버에서 다시 읽어 실제로 접수됐는지 확인
+async function confirmSaved(id){
+  for (let i = 0; i < 2; i++){
+    try {
+      const d = await (await fetch(SCRIPT_URL + '?id=' + encodeURIComponent(id) + '&t=' + Date.now())).json();
+      if (d && d.request) return 'ok';
+      if (i) return 'missing';
+    } catch(e){ if (i) return 'unknown'; }
+    await new Promise(res => setTimeout(res, 1500));
+  }
+}
+
 function showErr(msg, el){
   const b = $('errBox'); b.textContent = msg; b.style.display = 'block';
   if (el) { el.focus({preventScroll:true}); el.scrollIntoView({behavior:'smooth', block:'center'}); }
@@ -367,10 +382,20 @@ form.addEventListener('submit', async e => {
   if (!vinOk(v('vin'))) return showErr('차대번호를 다시 확인해 주세요. 모르시면 비워 두셔도 됩니다.', $('vin'));
   if (!items.length) return showErr('점검·교체 희망 항목을 하나 이상 골라 주세요.', $('items'));
   if (items.includes('기타') && !v('etc')) return showErr('기타 항목 내용을 적어 주세요.', $('etc'));
+  if (items.includes('타이어')){
+    const part = id => { const n = ['t-w','t-a','t-r'].filter(c => $(id).querySelector('.' + c).value).length; return n > 0 && n < 3; };
+    const first = id => $(id).querySelector('select');
+    if (part('tFront')) return showErr('앞 타이어 규격은 폭·편평비·인치를 모두 고르거나, 모르면 모두 비워 주세요.', first('tFront'));
+    if (!$('tSquare').checked){
+      if (part('tRear')) return showErr('뒤 타이어 규격은 폭·편평비·인치를 모두 고르거나, 모르면 모두 비워 주세요.', first('tRear'));
+      if (sizeOf('tFront') && !sizeOf('tRear')) return showErr('뒤 타이어 규격도 골라 주세요. 앞뒤가 같으면 「스퀘어 세팅」을 체크하세요.', first('tRear'));
+      if (!sizeOf('tFront') && sizeOf('tRear')) return showErr('앞 타이어 규격도 골라 주세요.', first('tFront'));
+    }
+  }
   if (!$('agree').checked) return showErr('개인정보 수집·이용 동의가 필요합니다.', $('agree'));
 
   const data = {
-    id: makeId(),
+    id: reqId,
     name: v('name'), contact: v('contact'),
     plate: v('plate').replace(/\s+/g, ' '),
     maker: v('maker'), model: v('model'), year: v('year'), fuel: v('fuel'),
@@ -389,25 +414,29 @@ form.addEventListener('submit', async e => {
 
   const btn = $('submitBtn');
   btn.disabled = true; btn.textContent = '보내는 중…';
+  let state = 'failed';
   try {
     await fetch(SCRIPT_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     });
-    form.style.display = 'none';
-    $('doneId').textContent = data.id;
-    $('done').style.display = 'block';
-    window.scrollTo({top:0, behavior:'smooth'});
-  } catch (err) {
-    showErr('전송에 실패했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
-  } finally {
-    btn.disabled = false; btn.textContent = '신청하기';
-  }
+    state = await confirmSaved(data.id);
+  } catch (err) {}
+  btn.disabled = false; btn.textContent = '신청하기';
+  if (state === 'failed') return showErr('전송에 실패했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+  if (state === 'missing') return showErr('접수가 확인되지 않았어요. 잠시 후 「신청하기」를 다시 눌러 주세요.');
+  $('doneNote').style.display = state === 'unknown' ? 'block' : 'none';
+  form.style.display = 'none';
+  $('doneId').textContent = data.id;
+  $('done').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
 });
 
 $('again').addEventListener('click', () => {
   form.reset();
+  reqId = makeId();
+  $('vinWarn').style.display = 'none'; $('errBox').style.display = 'none';
   ['brakeBox','tireBox','etcBox'].forEach(id => $(id).classList.remove('on'));
   $('tSquare').checked = true; syncRear();
   document.querySelectorAll('[data-ice]').forEach(c => c.disabled = false);

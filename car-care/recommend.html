@@ -61,6 +61,10 @@
   .req-box{display:none;background:var(--accent-soft);border-radius:12px;padding:14px 16px;font-size:13.5px;margin-top:4px}
   .req-box b{color:var(--accent)}
   .req-box div{margin-top:3px}
+  .rv-note{border:1.5px solid var(--accent);border-radius:12px;padding:12px 14px;font-size:13.5px;margin-top:8px}
+  .rv-note b{color:var(--accent)}
+  .rv-note div{margin-top:4px;white-space:pre-wrap}
+  .rv-note.done{border-color:var(--ok)} .rv-note.done b{color:var(--ok)}
   .item{border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;background:var(--card)}
   .item-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
   .item-head .no{font-weight:900;color:var(--accent);font-size:14px;flex:none}
@@ -211,6 +215,7 @@
       </details>
       <div class="msg" id="loadMsg"></div>
       <div class="req-box" id="reqBox"></div>
+      <div class="rv-note" id="rvBanner" style="display:none"></div>
     </div>
     <div class="f" style="margin-bottom:0">
       <label class="t" for="students">조사 학생<span class="req">*</span></label>
@@ -341,7 +346,7 @@
 <datalist id="itemList">
   <option value="엔진오일·오일필터"><option value="브레이크"><option value="브레이크액">
   <option value="타이어"><option value="와이퍼"><option value="에어컨(실내) 필터">
-  <option value="엔진 에어필터"><option value="배터리">
+  <option value="에어클리너"><option value="배터리">
 </datalist>
 <datalist id="oilList">
   <option value="킥스(GS칼텍스)"><option value="지크(SK엔무브)"><option value="S-OIL 세븐">
@@ -383,11 +388,12 @@ const HINTS = {
   '타이어':           ['', '폭·편평비·인치는 운전석 문 안쪽 스티커나 타이어 옆면에서 확인. 하중지수·속도기호(예: 95W)도 기존 타이어 이상인지 보고, 제조 주차(DOT 뒤 4자리)도 확인'],
   '와이퍼':           ['', '운전석·조수석 길이는 취급설명서나 지금 달린 블레이드 옆면 표기에서 확인. 운전석이 보통 더 길어요. 결합 방식(어댑터)이 맞아야 끼울 수 있어요'],
   '에어컨(실내) 필터': ['', '순정 품번을 먼저 찾고, 같은 크기의 AM 제품과 비교하기. 일반·활성탄·헤파(PM2.5) 등급에 따라 가격 차이가 커서 특징에 등급을 꼭 적기. 글러브박스 뒤에 있어 직접 교체하기 쉬운 경우가 많아요'],
-  '엔진 에어필터':     ['', '엔진 형식에 따라 규격이 달라지니 연식·엔진을 확인하고, 순정 품번을 찾은 뒤 같은 규격의 AM 제품과 가격 비교'],
+  '에어클리너':       ['', '엔진 형식에 따라 규격이 달라지니 연식·엔진을 확인하고, 순정 품번을 찾은 뒤 같은 규격의 AM 제품과 가격 비교'],
   '배터리':           ['', '지금 달린 배터리 윗면의 규격(예: DIN74L, 90R)과 타입을 확인. ISG(오토스탑) 차량은 AGM·EFB를 써야 해요. 단자 방향(L/R)이 맞아야 하고, 폐배터리를 반납하면 가격이 내려가는 경우가 많으니 반납 조건도 확인']
 };
 
 HINTS['브레이크 패드'] = HINTS['브레이크'];   // 예전 신청서 이름
+HINTS['엔진 에어필터'] = HINTS['에어클리너'];
 
 let radioSeq = 0;
 
@@ -434,7 +440,7 @@ function rmBtn(row){
   return b;
 }
 const BLK = {
-  oils:     { title:'엔진오일', hint:'점도·규격이 맞는 제품끼리 가격과 성능 비교', list:'oilList',
+  oils:     { title:'엔진오일', hint:'점도·규격이 맞는 제품끼리 비교 (가격은 필요한 용량 전체 기준)', list:'oilList',
               oem:'순정 오일명 (예: 현대 순정 / BMW LL-17FE+)', am:'오일명 (예: 킥스 PAO 1)', feat:'100% 합성, API SP' },
   ofilters: { title:'오일필터', hint:'순정과 AM(애프터마켓) 제품 비교', list:'filterList',
               oem:'순정 품번 (예: 26300-35505)', am:'제조사·제품명', feat:'고효율 여과지' },
@@ -587,7 +593,7 @@ function readTire(card){
 
 /* ---- 와이퍼 ---- */
 const W_LEN = Array.from({length:19}, (_, i) => 300 + i * 25);       // 300~750mm
-const wLabel = mm => `${mm}mm (${Math.round(mm / 25.4)}인치)`;
+const wLabel = mm => `${esc(mm)}mm (${Math.round(Number(mm) / 25.4) || '-'}인치)`;
 const W_ADAPT = ['U훅', '푸시버튼', '사이드핀', '탑락', '베이어넷', '핀치탭', '기타·모름'];
 function wSel(cls, val, ph){
   return `<select class="${cls}"><option value="">${ph}</option>` +
@@ -733,7 +739,10 @@ function addItem(d = {}){
   buildExt(card, d);
   card.querySelector('.k-item').addEventListener('input', () => {
     applyHint(card);
-    if (kindOf(card.querySelector('.k-item').value) !== card.dataset.kind) buildExt(card, readExt(card));
+    if (kindOf(card.querySelector('.k-item').value) !== card.dataset.kind){
+      card._stash = Object.assign(card._stash || {}, readExt(card));   // 이름을 잠깐 고쳐도 작성 내용 보관
+      buildExt(card, card._stash);
+    }
   });
   card.querySelector('.del').addEventListener('click', () => {
     if (confirm('이 항목을 삭제할까요?')) { card.remove(); renumber(); saveLocal(); }
@@ -770,7 +779,9 @@ function fill(d){
   $('items').innerHTML = '';
   (d.items || []).forEach(addItem);
   $('summary').value = d.summary || '';
-  if (d.review){ $('rvStatus').value = d.review.status || '검토중'; $('rvComment').value = d.review.comment || ''; }
+  const rv = d.review || {};
+  $('rvStatus').value = ['검토중', '수정 요청', '검토 완료'].includes(rv.status) ? rv.status : '검토중';
+  $('rvComment').value = rv.comment || '';
 }
 
 /* ---- 임시 저장 (이 기기) ---- */
@@ -808,23 +819,33 @@ function showRequest(r){
   box.style.display = 'block';
 }
 
+function splitItems(str){
+  const out = []; let depth = 0, cur = '';
+  for (const ch of String(str || '')){
+    if (ch === '(') depth++; else if (ch === ')') depth = Math.max(0, depth - 1);
+    if (ch === ',' && depth === 0){ out.push(cur); cur = ''; } else cur += ch;
+  }
+  out.push(cur);
+  return out.map(x => x.trim()).filter(Boolean);
+}
 function itemsFromRequest(r){
-  const list = String(r.items || '').split(',').map(s => s.trim()).filter(Boolean);
-  const hasOil = list.some(s => kindOf(s) === 'oil');
+  const list = splitItems(r.items);
+  const hasOil = list.some(x => kindOf(x) === 'oil');
   // 엔진오일 항목 안에 에어클리너 비교가 들어 있으니 따로 만들지 않음
-  return list.filter(s => !(hasOil && kindOf(s) === 'filter')).map(s => {
-    const m = s.match(/^기타\((.*)\)$/);
-    const it = { item: m ? m[1] : s };
-    const bp = s.match(/^브레이크\s*\((앞|뒤|앞·뒤)\)$/);          // 선생님이 고른 브레이크 위치
+  return list.filter(x => !(hasOil && kindOf(x) === 'filter')).flatMap(x => {
+    const m = x.match(/^기타\s*\((.*)\)$/);
+    if (m) return m[1].split(',').map(y => y.trim()).filter(Boolean).map(y => ({ item: y }));
+    const it = { item: x };
+    const bp = x.match(/^브레이크\s*\((앞|뒤|앞·뒤)\)$/);          // 선생님이 고른 브레이크 위치
     if (bp){ it.item = '브레이크'; it.pos = bp[1]; }
-    if (s === '타이어'){
-      const sizes = [...String(r.tireSize || '').matchAll(/(\d{3})\s*\/\s*(\d{2})\s*Z?R?F?\s*(\d{2})/gi)].map(x => ({ w: x[1], a: x[2], r: x[3] }));
+    if (x === '타이어'){
+      const sizes = [...String(r.tireSize || '').matchAll(/(\d{3})\s*\/\s*(\d{2})\s*Z?R?F?\s*(\d{2})/gi)].map(z => ({ w: z[1], a: z[2], r: z[3] }));
       if (sizes[0]) it.tsize = sizes[0];
       if (sizes[1] && !sameSize(sizes[0], sizes[1])){ it.trear = sizes[1]; it.square = false; }
       const tp = String(r.tireNote || '').match(/교체 희망:\s*(앞 \(2개\)|뒤 \(2개\)|앞·뒤 \(4개\))/);
       if (tp) it.tpos = tp[1];
     }
-    return it;
+    return [it];
   });
 }
 
@@ -863,54 +884,74 @@ $('refreshBtn').addEventListener('click', loadList);
 $('hideDone').addEventListener('change', renderList);
 $('loadBtn').addEventListener('click', () => loadRec());
 
+let serverReview = null;   // 서버에 저장된 지도교사 검토 내용
+function showReview(){
+  const box = $('rvBanner'), rv = serverReview || {};
+  const show = !REVIEW && !!(rv.comment || rv.status === '수정 요청' || rv.status === '검토 완료');
+  box.style.display = show ? 'block' : 'none';
+  if (!show) return;
+  box.className = 'rv-note' + (rv.status === '검토 완료' ? ' done' : '');
+  box.innerHTML = `<b>지도교사 검토 · ${esc(rv.status || '')}</b>` +
+    (rv.comment ? `<div>${esc(rv.comment)}</div>` : '') +
+    (rv.status === '검토 완료' ? '<div>검토가 끝난 추천서라 다시 제출할 수 없어요. 고칠 내용이 있으면 지도교사에게 말해 주세요.</div>' : '');
+}
+
 async function loadRec(){
   const id = $('rid').value.trim().toUpperCase();
   $('rid').value = id;
   if (!id) return msg($('loadMsg'), '접수번호를 입력해 주세요.');
   clearTimeout(t); loadedId = '';
+  $('saveMsg').style.display = 'none';
   if (SCRIPT_URL.startsWith('PASTE')){
     const local = readLocal(id);
+    serverReview = null; showReview();
     loadedId = id;
     if (hasContent(local)){ fill(local); return msg($('loadMsg'), '이 기기에 임시 저장된 내용을 불러왔어요.', true); }
     return msg($('loadMsg'), '저장 주소가 설정되지 않아 직접 입력해야 해요. (관리자: SCRIPT_URL 설정)');
   }
   const btn = $('loadBtn'); btn.disabled = true; btn.textContent = '불러오는 중…';
   $('loadMsg').style.display = 'none';
-  try {
-    const res = await fetch(SCRIPT_URL + '?id=' + encodeURIComponent(id));
-    const data = await res.json();
-    if (!data.ok) throw new Error('none');
-    if ($('rid').value.trim().toUpperCase() !== id) return;   // 그 사이 다른 건을 고른 경우
-    const r = data.request;
-    if (r) showRequest(r);
-    const fromReq = r ? { plate:r.plate, maker:r.maker, model:r.model, year:r.year, fuel:r.fuel, trim:r.trim,
-                          km: r.km ? Number(r.km).toLocaleString('ko-KR') : '', vin:r.vin } : {};
-    const local = readLocal(id);
-    let d, text;
-    if (data.rec){
-      const useLocal = !REVIEW && hasContent(local) && local.savedAt > (data.rec.savedAt || '');
-      d = useLocal ? local : data.rec;
-      text = useLocal ? '제출본보다 최신인 임시 저장본을 불러왔어요.' : '제출된 추천서를 불러왔어요.';
-    } else if (hasContent(local)){
-      d = local; text = '이 기기에 임시 저장된 내용을 불러왔어요.';
-    } else {
-      d = { vehicle: fromReq, items: r ? itemsFromRequest(r) : [] };
-      text = '차량 정보와 요청 항목을 불러왔어요.';
-    }
-    // 차량 정보는 비어 있는 칸만 선생님 신청 내용으로 채움
-    d.vehicle = Object.assign({}, fromReq, Object.fromEntries(Object.entries(d.vehicle || {}).filter(([, v]) => v)));
-    if (!d.items || !d.items.length) d.items = r ? itemsFromRequest(r) : [{}];
-    fill(d);
-    loadedId = id;
-    msg($('loadMsg'), text, true);
-  } catch(e){
-    msg($('loadMsg'), '해당 접수번호를 찾지 못했어요. 번호를 다시 확인해 주세요.');
-  } finally { btn.disabled = false; btn.textContent = '불러오기'; $('pick').value = LIST.some(r => r.id === id) ? id : ''; }
+  let data = null, failed = false;
+  try { data = await (await fetch(SCRIPT_URL + '?id=' + encodeURIComponent(id))).json(); }
+  catch(e){ failed = true; }
+  btn.disabled = false; btn.textContent = '불러오기';
+  const cur = $('rid').value.trim().toUpperCase();
+  $('pick').value = LIST.some(x => x.id === cur) ? cur : '';
+  if (cur !== id) return;                                     // 그 사이 다른 건을 고른 경우
+  if (failed) return msg($('loadMsg'), '불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+  if (!data || !data.ok) return msg($('loadMsg'), '해당 접수번호를 찾지 못했어요. 번호를 다시 확인해 주세요.');
+
+  const r = data.request;
+  if (r) showRequest(r); else $('reqBox').style.display = 'none';
+  const fromReq = r ? { plate:r.plate, maker:r.maker, model:r.model, year:r.year, fuel:r.fuel, trim:r.trim,
+                        km: r.km ? Number(r.km).toLocaleString('ko-KR') : '', vin:r.vin } : {};
+  const local = readLocal(id);
+  let d, text;
+  if (data.rec){
+    const useLocal = !REVIEW && hasContent(local) && local.savedAt > (data.rec.savedAt || '');
+    d = useLocal ? local : data.rec;
+    text = useLocal ? '제출본보다 최신인 임시 저장본을 불러왔어요.' : '제출된 추천서를 불러왔어요.';
+  } else if (hasContent(local)){
+    d = local; text = '이 기기에 임시 저장된 내용을 불러왔어요.';
+  } else {
+    d = { vehicle: fromReq, items: r ? itemsFromRequest(r) : [] };
+    text = '차량 정보와 요청 항목을 불러왔어요.';
+  }
+  // 차량 정보는 비어 있는 칸만 선생님 신청 내용으로 채움
+  d.vehicle = Object.assign({}, fromReq, Object.fromEntries(Object.entries(d.vehicle || {}).filter(([, v]) => v)));
+  if (!d.items || !d.items.length) d.items = r ? itemsFromRequest(r) : [{}];
+  // 검토 상태·의견은 임시 저장본이 아니라 항상 서버 값을 사용
+  serverReview = data.rec ? (data.rec.review || null) : null;
+  d.review = serverReview;
+  fill(d); showReview();
+  loadedId = id;
+  msg($('loadMsg'), text, true);
 }
 
 /* ---- 검사 ---- */
 function validate(d){
   if (!d.id) return '접수번호를 입력해 주세요.';
+  if (REVIEW && d.review.status !== '검토 완료') return '';
   if (!REVIEW && !d.students) return '조사 학생을 입력해 주세요.';
   if (!d.items.length) return '추천 항목을 하나 이상 작성해 주세요.';
   for (const [i, it] of d.items.entries()){
@@ -955,21 +996,46 @@ function validate(d){
 }
 
 /* ---- 제출 ---- */
+// 전송 뒤 서버에서 다시 읽어 실제로 저장됐는지 확인
+async function confirmSaved(d){
+  for (let i = 0; i < 2; i++){
+    try {
+      const data = await (await fetch(SCRIPT_URL + '?id=' + encodeURIComponent(d.id) + '&t=' + Date.now())).json();
+      if (data && data.rec && data.rec.savedAt === d.savedAt) return 'ok';
+      if (i) return 'missing';
+    } catch(e){ if (i) return 'unknown'; }
+    await new Promise(res => setTimeout(res, 1500));
+  }
+}
 $('submitBtn').addEventListener('click', async () => {
   const d = collect();
+  if (d.id && d.id !== loadedId) return msg($('saveMsg'), '접수 건을 먼저 불러온 뒤 제출해 주세요. (목록에서 고르거나, 접수번호를 넣고 「불러오기」)');
+  if (!REVIEW && serverReview && serverReview.status === '검토 완료')
+    return msg($('saveMsg'), '검토가 끝난 추천서라 다시 제출할 수 없어요. 고칠 내용이 있으면 지도교사에게 말해 주세요.');
   const err = validate(d);
   if (err) return msg($('saveMsg'), err);
   if (SCRIPT_URL.startsWith('PASTE')) return msg($('saveMsg'), '저장 주소가 설정되지 않았어요. (관리자: SCRIPT_URL 설정)');
   const btn = $('submitBtn'); btn.disabled = true; btn.textContent = '저장 중…';
+  $('saveMsg').style.display = 'none';
+  clearTimeout(t);   // 제출 직전 입력의 임시 저장이 제출본을 덮어쓰지 않게
+  let state = 'failed';
   try {
     await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors',
       headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(d) });
-    saveLocal();
-    setTimeout(loadList, 1500);
-    msg($('saveMsg'), REVIEW ? '검토 내용이 저장되었어요.' : '제출되었어요. 지도교사 검토 후 선생님께 전달됩니다.', true);
-  } catch(e){
-    msg($('saveMsg'), '저장에 실패했어요. 인터넷 연결을 확인해 주세요.');
-  } finally { btn.disabled = false; btn.textContent = REVIEW ? '검토 저장' : '제출하기'; }
+    state = await confirmSaved(d);
+  } catch(e){}
+  btn.disabled = false; btn.textContent = REVIEW ? '검토 저장' : '제출하기';
+  if (state === 'ok'){
+    try { localStorage.setItem('rec-draft-' + d.id, JSON.stringify(d)); } catch(e){}
+    serverReview = REVIEW ? d.review : { status: '검토 대기', comment: d.review.comment };
+    showReview();
+    setTimeout(loadList, 300);
+    return msg($('saveMsg'), REVIEW ? '검토 내용이 저장되었어요.' : '제출되었어요. 지도교사 검토 후 선생님께 전달됩니다.', true);
+  }
+  saveLocal();
+  if (state === 'missing') return msg($('saveMsg'), '저장이 확인되지 않았어요. 잠시 후 다시 제출해 주세요. 작성한 내용은 이 기기에 그대로 남아 있어요.');
+  if (state === 'unknown') return msg($('saveMsg'), '전송은 했지만 저장됐는지 확인하지 못했어요. ↻로 목록을 새로고침해 상태를 확인해 주세요.');
+  msg($('saveMsg'), '저장에 실패했어요. 인터넷 연결을 확인한 뒤 다시 제출해 주세요. 작성한 내용은 이 기기에 남아 있어요.');
 });
 
 /* ---- 추천서 문서 ---- */
